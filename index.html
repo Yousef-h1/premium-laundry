@@ -6,221 +6,341 @@
     <title>مغسلة الخدمة المميزة - POS</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         :root { --primary: #2563eb; --danger: #ef4444; --success: #10b981; --bg: #f8fafc; --warning: #f59e0b; }
-        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; background-color: var(--bg); width: 100%; }
+        body { font-family: 'Tajawal', sans-serif; display: flex; flex-direction: column; }
         
-        /* نظام الدخول */
-        #loginOverlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-card { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 350px; }
-        .login-card input { width: 80%; padding: 15px; margin: 20px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; }
+        #loginOverlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 999999; padding: 20px; }
+        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); width: 100%; max-width: 350px; text-align: center; }
+        .login-card input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 1.8rem; text-align: center; outline: none; letter-spacing: 5px; }
+        
+        .main-container { width: 100%; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 0; height: 100vh; overflow: hidden; }
+        #mainApp { display: none; width: 100%; height: 100%; }
+        
+        .input-panel { background: #fff; padding: 20px; box-sizing: border-box; border-left: 1px solid #e2e8f0; overflow-y: auto; height: 100vh; }
+        .invoice-preview { background: #fff; padding: 20px; box-sizing: border-box; overflow-y: auto; height: 100vh; border-right: 2px solid #f1f5f9; position: relative; }
+        
+        @media (max-width: 900px) { 
+            .main-container { grid-template-columns: 1fr; overflow-y: auto; display: block; } 
+            .input-panel, .invoice-preview { height: auto; min-height: unset; overflow-y: visible; }
+        }
 
-        /* التصميم الرئيسي */
-        .main-container { display: grid; grid-template-columns: 1fr 400px; height: 100vh; }
-        @media (max-width: 900px) { .main-container { grid-template-columns: 1fr; height: auto; } }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 0.85rem; color: #64748b; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; background-color: #fff; }
+        
+        #customPriceContainer, #overridePriceContainer { padding: 10px; border-radius: 10px; margin-bottom: 12px; }
+        #customPriceContainer { background: #fff9db; border: 1px solid #fab005; display: none; }
+        #overridePriceContainer { background: #f0f9ff; border: 1px solid #7dd3fc; }
+        
+        .service-options { display: flex; gap: 8px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+        .option-item { flex: 1; position: relative; text-align: center; }
+        .option-item input { position: absolute; opacity: 0; }
+        .option-item span { display: block; padding: 10px 2px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; }
+        .option-item input:checked + span { background: var(--primary); color: white; font-weight: bold; }
+        
+        .btn-add { background: var(--success); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-print { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        
+        /* التنسيق الجديد لتفاصيل الطلب */
+        .bill-table { width: 100%; margin-top: 15px; border-top: 2px solid #333; }
+        .bill-item-row { 
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px; 
+            margin-bottom: 8px;
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .item-main-info { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 6px; }
+        .item-sub-info { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.8rem; 
+            color: #64748b; 
+            border-top: 1px solid #f1f5f9; 
+            padding-top: 6px; 
+        }
+        .item-badge { background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-weight: bold; }
+        .remove-btn { position: absolute; left: 8px; bottom: 8px; color: var(--danger); cursor: pointer; border: none; background: none; font-size: 1.1rem; }
 
-        .input-panel { padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #e2e8f0; }
-        .invoice-preview { padding: 20px; background: white; overflow-y: auto; }
+        .inv-meta { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ddd; font-size: 0.85rem; }
+        .total-box { margin-top: 20px; padding: 15px; background: #1e293b; color: #fff; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .search-box { background: #f1f5f9; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+        
+        .discount-container { margin-top: 15px; display: flex; align-items: center; gap: 5px; background: #f8fafc; padding: 8px; border-radius: 10px; border: 1px dashed #cbd5e1; }
+        .discount-container input { padding: 8px; border: 1px solid #ddd; border-radius: 8px; flex: 1; }
 
-        .form-group { margin-bottom: 15px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Tajawal'; box-sizing: border-box; }
-
-        .search-box { background: #eff6ff; padding: 15px; border-radius: 15px; border: 1px solid #bfdbfe; margin-bottom: 20px; }
-        .btn-add { background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
-        .btn-print { background: var(--primary); color: white; border: none; padding: 18px; border-radius: 10px; width: 100%; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
-
-        /* جدول الفاتورة */
-        .bill-item { border-bottom: 1px dashed #ddd; padding: 10px 0; position: relative; }
-        .remove-btn { color: var(--danger); cursor: pointer; float: left; }
-        .total-box { background: #1e293b; color: white; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; margin-top: 20px; }
-
-        @media print { .no-print { display: none !important; } .main-container { display: block; } .invoice-preview { width: 100%; } }
+        @media print { 
+            .no-print, #loginOverlay, .remove-btn { display: none !important; } 
+            .main-container { display: block; }
+            .invoice-preview { width: 100%; border: none; padding: 0; }
+            body { background: white; }
+            .bill-item-row { border: 1px solid #ddd; box-shadow: none; margin-bottom: 5px; }
+        }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay">
+<div id="loginOverlay" class="no-print">
     <div class="login-card">
         <h2 style="color:var(--primary)">الخدمة المميزة 🧺</h2>
-        <input type="password" id="passInput" placeholder="••••" maxlength="4">
-        <button class="btn-add" onclick="login()">دخول</button>
+        <p>أدخل الرقم السري للدخول</p>
+        <input type="password" id="mainPassInput" placeholder="••••" maxlength="4">
+        <button class="btn-add" style="background:var(--primary)" onclick="handleAppLogin()">دخول النظام</button>
     </div>
 </div>
 
-<div class="main-container" id="app" style="display:none;">
+<div class="main-container" id="mainApp">
     <div class="input-panel no-print">
         <div class="search-box">
-            <label>🔍 بحث سريع (رقم هاتف أو فاتورة)</label>
-            <input type="text" id="searchInput" placeholder="أدخل الرقم واضغط Enter..." onkeypress="handleSearch(event)">
+            <label>🔍 بحث سريع (رقم فاتورة/هاتف)</label>
+            <input type="text" id="searchInput" placeholder="ابحث هنا..." onkeypress="handleSearch(event)">
         </div>
 
-        <h4>بيانات العميل</h4>
-        <div class="form-group"><input type="text" id="custName" placeholder="اسم الزبون"></div>
-        <div class="form-group"><input type="tel" id="custPhone" placeholder="رقم الهاتف"></div>
-
-        <h4>الخدمات</h4>
+        <h4 style="margin:0 0 12px">بيانات العميل</h4>
+        <div class="form-group"><input type="text" id="custName" placeholder="الاسم / Name"></div>
+        <div class="form-group"><input type="tel" id="custPhone" placeholder="الهاتف / Phone"></div>
+        
+        <h4 style="margin:15px 0 10px">الخدمات Services</h4>
         <div class="form-group">
-            <select id="itemType">
-                <option value="ثوب | Thobe" data-price="0.500">ثوب (0.500)</option>
-                <option value="غترة | Ghutra" data-price="0.200">غترة (0.200)</option>
-                <option value="عباية | Abaya" data-price="1.000">عباية (1.000)</option>
-                <option value="بطانية | Blanket" data-price="2.000">بطانية (2.000)</option>
+            <select id="itemType" onchange="togglePriceInput()">
+                <optgroup label="عامة | General">
+                    <option value="عباية بالبخار | Abaya Steam" data-wash="1.000" data-iron="0.500">عباية بالبخار | Abaya Steam</option>
+                    <option value="شيلة - حجاب | Hijab" data-wash="0.200" data-iron="0.200">شيلة - حجاب | Hijab</option>
+                    <option value="غترة | Ghutra" data-wash="0.400" data-iron="0.200">غترة | Ghutra</option>
+                    <option value="بشت | Bisht" data-wash="1.000" data-iron="0.500">بشت | Bisht</option>
+                    <option value="جاكيت (بخار) | Jacket Steam" data-wash="0.800" data-iron="0.000">جاكيت (بخار) | Jacket Steam</option>
+                    <option value="فوطة استحمام | Towel" data-wash="0.600" data-iron="0.000">فوطة استحمام | Towel</option>
+                </optgroup>
+                <optgroup label="رجالي | Gents">
+                    <option value="ثوب | Thobe" data-wash="0.500" data-iron="0.150">ثوب | Thobe</option>
+                    <option value="ثوب بالبخار | Thobe Steam" data-wash="0.600" data-iron="0.200">ثوب بالبخار | Thobe Steam</option>
+                    <option value="بنطلون طويل | Trouser" data-wash="0.600" data-iron="0.300">بنطلون طويل | Trouser</option>
+                    <option value="بنطلون قصير | Short" data-wash="0.400" data-iron="0.200">بنطلون قصير | Short</option>
+                    <option value="بدلة عسكرية | Uniform" data-wash="1.000" data-iron="0.400">بدلة عسكرية | Uniform</option>
+                    <option value="فانيلة | T-Shirt" data-wash="0.400" data-iron="0.200">فانيلة | T-Shirt</option>
+                    <option value="فانيلة داخلية | Underwear Shirt" data-wash="0.200" data-iron="0.000">فانيلة داخلية | Underwear Shirt</option>
+                    <option value="كلسون | Underwear" data-wash="0.200" data-iron="0.000">كلسون | Underwear</option>
+                    <option value="جوارب | Socks" data-wash="0.100" data-iron="0.000">جوارب | Socks</option>
+                </optgroup>
+                <optgroup label="نسائي | Ladies">
+                    <option value="قميص بيت نسائي | Ladies House Shirt" data-wash="0.600" data-iron="0.400">قميص بيت نسائي | Ladies House Shirt</option>
+                    <option value="تنورة | Skirt" data-wash="0.600" data-iron="0.300">تنورة | Skirt</option>
+                </optgroup>
+                <optgroup label="مفروشات | Bedding">
+                    <option value="غطاء سرير فردي | Single Bed Cover" data-wash="0.500" data-iron="0.000">غطاء سرير فردي | Single Bed Cover</option>
+                    <option value="غطاء سرير مزدوج | Double Bed Cover" data-wash="0.800" data-iron="0.000">غطاء سرير مزدوج | Double Bed Cover</option>
+                    <option value="بطانية كبيرة | Large Blanket" data-wash="2.000" data-iron="0.000">بطانية كبيرة | Large Blanket</option>
+                    <option value="بطانية صغيرة | Small Blanket" data-wash="1.500" data-iron="0.000">بطانية صغيرة | Small Blanket</option>
+                    <option value="غطاء مخدة | Pillow Cover" data-wash="0.200" data-iron="0.000">غطاء مخدة | Pillow Cover</option>
+                    <option value="ستارة 2م | Curtain 2m" data-wash="1.000" data-iron="0.000">ستارة 2م | Curtain 2m</option>
+                    <option value="سجاد 2م | Carpet 2m" data-wash="1.000" data-iron="0.000">سجاد 2م | Carpet 2m</option>
+                </optgroup>
+                <optgroup label="يدوي | Manual">
+                    <option value="فستان | Dress" data-manual="true">فستان | Dress (يدوي)</option>
+                    <option value="بدلة رسمية | Suit" data-manual="true">بدلة رسمية | Suit (يدوي)</option>
+                    <option value="شنطة | Bag" data-manual="true">شنطة | Bag (يدوي)</option>
+                    <option value="حذاء | Shoes" data-wash="2.000" data-iron="0.000">حذاء | Shoes</option>
+                    <option value="قبعة | Cap" data-wash="0.200" data-iron="0.000">قبعة | Cap</option>
+                </optgroup>
             </select>
         </div>
-        <div class="form-group">
-            <input type="number" id="qty" value="1" min="1" placeholder="الكمية">
-        </div>
-        <div class="form-group">
-            <select id="payMethod">
-                <option value="كاش">كاش (Cash)</option>
-                <option value="بنفت">بنفت (Benefit)</option>
-            </select>
+
+        <div id="customPriceContainer">
+            <label>السعر اليدوي (BHD)</label>
+            <input type="number" id="customPrice" step="0.100" placeholder="0.000">
         </div>
 
-        <button class="btn-add" onclick="addItem()">إضافة للطلب +</button>
+        <div id="overridePriceContainer">
+            <label>تعديل السعر (اختياري)</label>
+            <input type="number" id="overridePrice" step="0.100" placeholder="0.000">
+        </div>
+
+        <div class="service-options">
+            <label class="option-item"><input type="radio" name="serviceMode" value="غسيل وكوي" checked><span>غسيل وكوي</span></label>
+            <label class="option-item"><input type="radio" name="serviceMode" value="كوي فقط"><span>كوي فقط</span></label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+            <input type="number" id="qty" value="1" min="1">
+            <select id="urgentType"><option value="1" data-label="عادي">عادي</option><option value="2" data-label="مستعجل">مستعجل X2</option></select>
+        </div>
+
+        <button class="btn-add" style="margin-top:15px" onclick="addItem()">إضافة للطلب +</button>
     </div>
 
-    <div class="invoice-preview" id="printArea">
-        <div style="text-align: center; border-bottom: 2px solid #333;">
-            <h2 style="margin:5px">مغسلة الخدمة المميزة</h2>
-            <p>Premium Service Laundry</p>
+    <div class="invoice-preview" id="invoice">
+        <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
+            <h3 style="margin: 0; color:#000">مغسلة الخدمة المميزة</h3>
+            <p style="font-size: 0.75rem; margin: 2px 0;">Premium Service Laundry</p>
+        </div>
+        
+        <div class="inv-meta">
+            <div>رقم الفاتورة: #<span id="invNum" style="font-weight: bold;">---</span></div>
+            <div id="dateNow"></div>
         </div>
 
-        <div style="display:flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
-            <span>رقم الفاتورة: #<b id="invNum">---</b></span>
-            <span id="curDate"></span>
+        <div style="margin: 10px 0; font-size: 0.9rem;">
+            <div>العميل: <span id="dispName" style="font-weight: bold;">---</span></div>
+            <div>الهاتف: <span id="dispPhone" style="font-weight: bold;">---</span></div>
         </div>
 
-        <div style="padding: 10px 0;">
-            <div>الزبون: <b id="dispName">---</b></div>
-            <div>الهاتف: <b id="dispPhone">---</b></div>
-        </div>
+        <div id="billBody" class="bill-table"></div>
 
-        <div id="billItems"></div>
+        <div class="discount-container no-print">
+            <label style="margin:0; font-size:0.8rem">خصم (BHD):</label>
+            <input type="number" id="discountAmount" step="0.100" placeholder="0.000">
+            <button class="btn-apply-discount" style="background:var(--warning); color:white; border:none; padding:5px 10px; border-radius:5px" onclick="applyDiscount()">تطبيق</button>
+        </div>
 
         <div class="total-box">
-            <span>الإجمالي الكلي</span>
-            <span id="finalTotal">0.000</span>
+            <span>الإجمالي Net Total</span>
+            <span id="finalTotal" style="font-weight:900; font-size:1.4rem">0.000</span>
         </div>
-
-        <button class="btn-print no-print" onclick="saveAndPrint()">اعتماد وطباعة 🖨️</button>
+        
+        <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد وطباعة 🖨️</button>
     </div>
 </div>
 
 <script>
-    const CONFIG = {
-        SEARCH_WEBHOOK: "https://n8n.awj-bh.cloud/webhook/6ef736b2-87a5-459f-864c-ee1e34b1a7a1",
-        SAVE_WEBHOOK: "https://n8n.awj-bh.cloud/webhook-test/save-invoice-premium",
-        PASSWORD: "0005"
-    };
+    const APP_PASS = "0005";
+    const WEBHOOK_URL_SEARCH = "https://n8n.awj-bh.cloud/webhook/search-invoice";
+    const WEBHOOK_URL_SAVE = "https://n8n.awj-bh.cloud/webhook/725f1ccb-6fa7-421d-9b68-8b60322702c3";
+    let items = [];
+    let currentDiscount = 0;
 
-    let cart = [];
-
-    function login() {
-        if(document.getElementById('passInput').value === CONFIG.PASSWORD) {
-            document.getElementById('loginOverlay').remove();
-            document.getElementById('app').style.display = 'grid';
-            document.getElementById('curDate').innerText = new Date().toLocaleDateString('en-GB');
-            document.getElementById('invNum').innerText = Date.now().toString().slice(-6);
-        } else { alert("رمز خاطئ!"); }
+    function handleAppLogin() {
+        if (document.getElementById('mainPassInput').value === APP_PASS) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'grid';
+        } else {
+            alert("⚠️ الرقم السري خاطئ!");
+        }
     }
 
     async function handleSearch(e) {
         if (e.key === 'Enter') {
             const query = e.target.value;
-            const type = query.length >= 8 ? 'phone' : 'invoice';
-            
+            if (!query) return;
             try {
-                const res = await fetch(CONFIG.SEARCH_WEBHOOK, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ searchQuery: query, type: type })
+                const response = await fetch(WEBHOOK_URL_SEARCH, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "search", searchQuery: query })
                 });
-                const data = await res.json();
-                
-                if (data.found) {
-                    document.getElementById('custName').value = data.customerName;
-                    document.getElementById('custPhone').value = data.phone;
-                    updateDisp();
-                    if(data.status === "لم يتم الدفع") {
-                        alert(`⚠️ تنبيه: العميل لديه مبالغ متأخرة ${data.total} BHD على فاتورة #${data.invoiceNumber}`);
-                    }
+                const data = await response.json();
+                const finalData = Array.isArray(data) ? data[0] : data;
+                if (finalData && (finalData.customer || finalData.found)) {
+                    document.getElementById('custName').value = (finalData.customer || "").replace('=', '');
+                    document.getElementById('custPhone').value = (finalData.phone || "").toString().replace('=', '');
+                    document.getElementById('invNum').innerText = (finalData.invoiceNumber || query).toString().replace('=', '');
+                    document.getElementById('dispName').innerText = document.getElementById('custName').value;
+                    document.getElementById('dispPhone').innerText = document.getElementById('custPhone').value;
+                    renderBill();
                 }
-            } catch (err) { console.error("Search Error"); }
+            } catch (err) { alert("⚠️ خطأ في الاتصال."); }
         }
+    }
+
+    function togglePriceInput() {
+        const opt = document.getElementById('itemType').options[document.getElementById('itemType').selectedIndex];
+        const isManual = opt.getAttribute('data-manual') === "true";
+        document.getElementById('customPriceContainer').style.display = isManual ? 'block' : 'none';
+        document.getElementById('overridePriceContainer').style.display = isManual ? 'none' : 'block';
     }
 
     function addItem() {
         const sel = document.getElementById('itemType');
-        const item = {
-            id: Date.now(),
-            name: sel.value,
-            price: parseFloat(sel.options[sel.selectedIndex].dataset.price),
-            qty: parseInt(document.getElementById('qty').value)
-        };
-        cart.push(item);
-        renderCart();
-    }
+        const opt = sel.options[sel.selectedIndex];
+        const mode = document.querySelector('input[name="serviceMode"]:checked').value;
+        const qty = parseInt(document.getElementById('qty').value) || 1;
+        const urgentSel = document.getElementById('urgentType');
+        const urgentLabel = urgentSel.options[urgentSel.selectedIndex].getAttribute('data-label');
+        const urgentVal = parseInt(urgentSel.value);
+        
+        let unitPrice = (opt.getAttribute('data-manual') === "true") ? 
+            parseFloat(document.getElementById('customPrice').value) : 
+            (mode === 'غسيل وكوي' ? parseFloat(opt.dataset.wash) : parseFloat(opt.dataset.iron));
+        
+        const override = parseFloat(document.getElementById('overridePrice').value);
+        if (!isNaN(override) && override > 0) unitPrice = override;
 
-    function renderCart() {
-        const container = document.getElementById('billItems');
-        container.innerHTML = '';
-        let total = 0;
-        cart.forEach(item => {
-            total += (item.price * item.qty);
-            container.innerHTML += `
-                <div class="bill-item">
-                    <span class="no-print remove-btn" onclick="removeItem(${item.id})">✕</span>
-                    <b>${item.name}</b> x ${item.qty}
-                    <span style="float:left">${(item.price * item.qty).toFixed(3)}</span>
-                </div>`;
+        items.push({ 
+            id: Date.now(), 
+            name: opt.value, 
+            qty: qty, 
+            mode: mode, 
+            urgency: urgentLabel,
+            price: (unitPrice * qty * urgentVal) 
         });
-        document.getElementById('finalTotal').innerText = total.toFixed(3) + " BHD";
+        
+        renderBill();
+        document.getElementById('overridePrice').value = "";
+        document.getElementById('customPrice').value = "";
     }
 
     function removeItem(id) {
-        cart = cart.filter(i => i.id !== id);
-        renderCart();
+        items = items.filter(x => x.id !== id);
+        renderBill();
     }
 
-    function updateDisp() {
-        document.getElementById('dispName').innerText = document.getElementById('custName').value || "---";
-        document.getElementById('dispPhone').innerText = document.getElementById('custPhone').value || "---";
+    function applyDiscount() {
+        currentDiscount = parseFloat(document.getElementById('discountAmount').value) || 0;
+        renderBill();
     }
 
-    document.getElementById('custName').oninput = updateDisp;
-    document.getElementById('custPhone').oninput = updateDisp;
-
-    async function saveAndPrint() {
-        if (cart.length === 0) return alert("السلة فارغة");
+    function renderBill() {
+        const container = document.getElementById('billBody');
+        container.innerHTML = "";
+        let total = 0;
         
-        const method = document.getElementById('payMethod').value;
-        const total = parseFloat(document.getElementById('finalTotal').innerText);
+        items.forEach(i => {
+            const row = document.createElement('div');
+            row.className = 'bill-item-row';
+            row.innerHTML = `
+                <div class="item-main-info">
+                    <span>${i.name}</span>
+                    <span style="color:var(--primary)">${i.price.toFixed(3)}</span>
+                </div>
+                <div class="item-sub-info">
+                    <span>الكمية: ${i.qty} | <span class="item-badge">${i.mode}</span></span>
+                    <span class="item-badge" style="background:#fee2e2; color:#b91c1c">${i.urgency}</span>
+                </div>
+                <button class="remove-btn no-print" onclick="removeItem(${i.id})"><i class="fas fa-trash-alt"></i></button>
+            `;
+            container.appendChild(row);
+            total += i.price;
+        });
+        
+        const netTotal = Math.max(0, total - currentDiscount);
+        document.getElementById('finalTotal').innerText = netTotal.toFixed(3) + " BHD";
+    }
 
+    async function processAndPrint() {
+        if (items.length === 0) return alert("الفاتورة فارغة!");
         const payload = {
-            date: new Date().toLocaleDateString('en-GB'),
+            action: 'save',
             invoiceNumber: document.getElementById('invNum').innerText,
             customer: document.getElementById('custName').value,
             phone: document.getElementById('custPhone').value,
-            items: cart.map(i => `${i.name} x${i.qty}`).join(', '),
-            total: total,
-            status: "تم الدفع",
-            cash: method === "كاش" ? total : 0,
-            benefit: method === "بنفت" ? total : 0,
-            paymentDate: new Date().toLocaleDateString('en-GB')
+            total: document.getElementById('finalTotal').innerText,
+            items: items.map(i => `${i.name} (${i.mode} - ${i.urgency}) x${i.qty}`).join(', ')
         };
-
         try {
-            await fetch(CONFIG.SAVE_WEBHOOK, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
+            await fetch(WEBHOOK_URL_SAVE, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
             window.print();
-            location.reload();
-        } catch (err) { alert("خطأ في الاتصال بـ n8n"); }
+            setTimeout(() => location.reload(), 2000);
+        } catch (e) { alert("⚠️ خطأ في الحفظ."); }
     }
+
+    document.getElementById('dateNow').innerText = new Date().toLocaleDateString('ar-BH');
+    document.getElementById('custName').oninput = e => document.getElementById('dispName').innerText = e.target.value || "---";
+    document.getElementById('custPhone').oninput = e => document.getElementById('dispPhone').innerText = e.target.value || "---";
 </script>
 </body>
 </html>
