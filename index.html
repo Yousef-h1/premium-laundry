@@ -2,120 +2,225 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مغسلة الخدمة المميزة | العناية الفائقة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مغسلة الخدمة المميزة - POS</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: 'Tajawal', sans-serif; }
-        .hero-gradient { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
-        .whatsapp-float {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background-color: #25d366;
-            color: white;
-            padding: 15px;
-            border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
+        :root { --primary: #2563eb; --danger: #ef4444; --success: #10b981; --bg: #f8fafc; --warning: #f59e0b; }
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
+        
+        /* نظام الدخول */
+        #loginOverlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-card { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 350px; }
+        .login-card input { width: 80%; padding: 15px; margin: 20px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; }
+
+        /* التصميم الرئيسي */
+        .main-container { display: grid; grid-template-columns: 1fr 400px; height: 100vh; }
+        @media (max-width: 900px) { .main-container { grid-template-columns: 1fr; height: auto; } }
+
+        .input-panel { padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #e2e8f0; }
+        .invoice-preview { padding: 20px; background: white; overflow-y: auto; }
+
+        .form-group { margin-bottom: 15px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Tajawal'; box-sizing: border-box; }
+
+        .search-box { background: #eff6ff; padding: 15px; border-radius: 15px; border: 1px solid #bfdbfe; margin-bottom: 20px; }
+        .btn-add { background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
+        .btn-print { background: var(--primary); color: white; border: none; padding: 18px; border-radius: 10px; width: 100%; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
+
+        /* جدول الفاتورة */
+        .bill-item { border-bottom: 1px dashed #ddd; padding: 10px 0; position: relative; }
+        .remove-btn { color: var(--danger); cursor: pointer; float: left; }
+        .total-box { background: #1e293b; color: white; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; margin-top: 20px; }
+
+        @media print { .no-print { display: none !important; } .main-container { display: block; } .invoice-preview { width: 100%; } }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body>
 
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-blue-900">مغسلة الخدمة المميزة</div>
-            <div class="hidden md:flex gap-6">
-                <a href="#services" class="hover:text-blue-600">خدماتنا</a>
-                <a href="#features" class="hover:text-blue-600">لماذا نحن؟</a>
-                <a href="https://wa.me/YOUR_NUMBER" class="bg-blue-900 text-white px-4 py-2 rounded-lg">اطلب الآن</a>
-            </div>
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2 style="color:var(--primary)">الخدمة المميزة 🧺</h2>
+        <input type="password" id="passInput" placeholder="••••" maxlength="4">
+        <button class="btn-add" onclick="login()">دخول</button>
+    </div>
+</div>
+
+<div class="main-container" id="app" style="display:none;">
+    <div class="input-panel no-print">
+        <div class="search-box">
+            <label>🔍 بحث سريع (رقم هاتف أو فاتورة)</label>
+            <input type="text" id="searchInput" placeholder="أدخل الرقم واضغط Enter..." onkeypress="handleSearch(event)">
         </div>
-    </nav>
 
-    <header class="hero-gradient text-white py-20 px-6 text-center">
-        <h1 class="text-4xl md:text-6xl font-bold mb-6">نعتني بملابسك كما لم يفعل أحد من قبل</h1>
-        <p class="text-xl mb-8 opacity-90">غسيل بالماء العذب، غسلة خاصة لكل عميل، وتعطير فاخر مجاني.</p>
-        <div class="flex flex-wrap justify-center gap-4">
-            <a href="#services" class="bg-white text-blue-900 px-8 py-3 rounded-full font-bold shadow-lg">اكتشف خدماتنا</a>
+        <h4>بيانات العميل</h4>
+        <div class="form-group"><input type="text" id="custName" placeholder="اسم الزبون"></div>
+        <div class="form-group"><input type="tel" id="custPhone" placeholder="رقم الهاتف"></div>
+
+        <h4>الخدمات</h4>
+        <div class="form-group">
+            <select id="itemType">
+                <option value="ثوب | Thobe" data-price="0.500">ثوب (0.500)</option>
+                <option value="غترة | Ghutra" data-price="0.200">غترة (0.200)</option>
+                <option value="عباية | Abaya" data-price="1.000">عباية (1.000)</option>
+                <option value="بطانية | Blanket" data-price="2.000">بطانية (2.000)</option>
+            </select>
         </div>
-    </header>
-
-    <section id="features" class="py-16 container mx-auto px-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div class="p-6 bg-white rounded-xl shadow-sm border-b-4 border-blue-900">
-                <div class="text-4xl mb-4">💧</div>
-                <h3 class="font-bold text-xl mb-2">ماء عذب نقّي</h3>
-                <p class="text-gray-600">نستخدم أجود أنواع المياه للحفاظ على ألوان ملابسك من البهتان.</p>
-            </div>
-            <div class="p-6 bg-white rounded-xl shadow-sm border-b-4 border-blue-900">
-                <div class="text-4xl mb-4">🛡️</div>
-                <h3 class="font-bold text-xl mb-2">غسلة خاصة لكل عميل</h3>
-                <p class="text-gray-600">خصوصية تامة، ملابسك لا تختلط بملابس الآخرين أبداً.</p>
-            </div>
-            <div class="p-6 bg-white rounded-xl shadow-sm border-b-4 border-blue-900">
-                <div class="text-4xl mb-4">✨</div>
-                <h3 class="font-bold text-xl mb-2">تعطير مجاني</h3>
-                <p class="text-gray-600">خلطة عطرية خاصة بالمغسلة تمنح ملابسك رائحة تدوم طويلاً.</p>
-            </div>
+        <div class="form-group">
+            <input type="number" id="qty" value="1" min="1" placeholder="الكمية">
         </div>
-    </section>
-
-    <section id="services" class="py-16 bg-gray-100">
-        <div class="container mx-auto px-6">
-            <h2 class="text-3xl font-bold text-center mb-12 text-blue-900">خدماتنا المتخصصة</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white rounded-lg overflow-hidden shadow-md">
-                    <div class="h-48 bg-gray-200 flex items-center justify-center text-5xl">👔</div>
-                    <div class="p-4">
-                        <h4 class="font-bold mb-2">الملابس والفساتين</h4>
-                        <p class="text-sm text-gray-600">عناية خاصة بفساتين السهرة والقطع الحساسة بالبخار.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg overflow-hidden shadow-md">
-                    <div class="h-48 bg-gray-200 flex items-center justify-center text-5xl">👟</div>
-                    <div class="p-4">
-                        <h4 class="font-bold mb-2">الأحذية والشنط</h4>
-                        <p class="text-sm text-gray-600">تنظيف عميق للأحذية الرياضية والشنط المدرسية والنسائية.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg overflow-hidden shadow-md">
-                    <div class="h-48 bg-gray-200 flex items-center justify-center text-5xl">🎓</div>
-                    <div class="p-4">
-                        <h4 class="font-bold mb-2">تنسيق العقال</h4>
-                        <p class="text-sm text-gray-600">إعادة الرونق والشكل الأصلي للعقال العربي.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg overflow-hidden shadow-md">
-                    <div class="h-48 bg-gray-200 flex items-center justify-center text-5xl">🧺</div>
-                    <div class="p-4">
-                        <h4 class="font-bold mb-2">غسيل وكي</h4>
-                        <p class="text-sm text-gray-600">خدمات الكي الاحترافي لجميع أنواع الملابس والمفروشات.</p>
-                    </div>
-                </div>
-            </div>
+        <div class="form-group">
+            <select id="payMethod">
+                <option value="كاش">كاش (Cash)</option>
+                <option value="بنفت">بنفت (Benefit)</option>
+            </select>
         </div>
-    </section>
 
-    <footer class="bg-blue-900 text-white py-10 text-center">
-        <p>© 2026 مغسلة الخدمة المميزة - البحرين</p>
-    </footer>
+        <button class="btn-add" onclick="addItem()">إضافة للطلب +</button>
+    </div>
 
-    <a href="https://wa.me/YOUR_NUMBER" class="whatsapp-float font-bold">
-        <span>اطلب عبر الواتساب</span>
-        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.808 1.565 5.407l-.992 3.613 3.916-.921z"/></svg>
-    </a>
+    <div class="invoice-preview" id="printArea">
+        <div style="text-align: center; border-bottom: 2px solid #333;">
+            <h2 style="margin:5px">مغسلة الخدمة المميزة</h2>
+            <p>Premium Service Laundry</p>
+        </div>
 
+        <div style="display:flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+            <span>رقم الفاتورة: #<b id="invNum">---</b></span>
+            <span id="curDate"></span>
+        </div>
+
+        <div style="padding: 10px 0;">
+            <div>الزبون: <b id="dispName">---</b></div>
+            <div>الهاتف: <b id="dispPhone">---</b></div>
+        </div>
+
+        <div id="billItems"></div>
+
+        <div class="total-box">
+            <span>الإجمالي الكلي</span>
+            <span id="finalTotal">0.000</span>
+        </div>
+
+        <button class="btn-print no-print" onclick="saveAndPrint()">اعتماد وطباعة 🖨️</button>
+    </div>
+</div>
+
+<script>
+    const CONFIG = {
+        SEARCH_WEBHOOK: "https://n8n.awj-bh.cloud/webhook/6ef736b2-87a5-459f-864c-ee1e34b1a7a1",
+        SAVE_WEBHOOK: "https://n8n.awj-bh.cloud/webhook-test/save-invoice-premium",
+        PASSWORD: "0005"
+    };
+
+    let cart = [];
+
+    function login() {
+        if(document.getElementById('passInput').value === CONFIG.PASSWORD) {
+            document.getElementById('loginOverlay').remove();
+            document.getElementById('app').style.display = 'grid';
+            document.getElementById('curDate').innerText = new Date().toLocaleDateString('en-GB');
+            document.getElementById('invNum').innerText = Date.now().toString().slice(-6);
+        } else { alert("رمز خاطئ!"); }
+    }
+
+    async function handleSearch(e) {
+        if (e.key === 'Enter') {
+            const query = e.target.value;
+            const type = query.length >= 8 ? 'phone' : 'invoice';
+            
+            try {
+                const res = await fetch(CONFIG.SEARCH_WEBHOOK, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ searchQuery: query, type: type })
+                });
+                const data = await res.json();
+                
+                if (data.found) {
+                    document.getElementById('custName').value = data.customerName;
+                    document.getElementById('custPhone').value = data.phone;
+                    updateDisp();
+                    if(data.status === "لم يتم الدفع") {
+                        alert(`⚠️ تنبيه: العميل لديه مبالغ متأخرة ${data.total} BHD على فاتورة #${data.invoiceNumber}`);
+                    }
+                }
+            } catch (err) { console.error("Search Error"); }
+        }
+    }
+
+    function addItem() {
+        const sel = document.getElementById('itemType');
+        const item = {
+            id: Date.now(),
+            name: sel.value,
+            price: parseFloat(sel.options[sel.selectedIndex].dataset.price),
+            qty: parseInt(document.getElementById('qty').value)
+        };
+        cart.push(item);
+        renderCart();
+    }
+
+    function renderCart() {
+        const container = document.getElementById('billItems');
+        container.innerHTML = '';
+        let total = 0;
+        cart.forEach(item => {
+            total += (item.price * item.qty);
+            container.innerHTML += `
+                <div class="bill-item">
+                    <span class="no-print remove-btn" onclick="removeItem(${item.id})">✕</span>
+                    <b>${item.name}</b> x ${item.qty}
+                    <span style="float:left">${(item.price * item.qty).toFixed(3)}</span>
+                </div>`;
+        });
+        document.getElementById('finalTotal').innerText = total.toFixed(3) + " BHD";
+    }
+
+    function removeItem(id) {
+        cart = cart.filter(i => i.id !== id);
+        renderCart();
+    }
+
+    function updateDisp() {
+        document.getElementById('dispName').innerText = document.getElementById('custName').value || "---";
+        document.getElementById('dispPhone').innerText = document.getElementById('custPhone').value || "---";
+    }
+
+    document.getElementById('custName').oninput = updateDisp;
+    document.getElementById('custPhone').oninput = updateDisp;
+
+    async function saveAndPrint() {
+        if (cart.length === 0) return alert("السلة فارغة");
+        
+        const method = document.getElementById('payMethod').value;
+        const total = parseFloat(document.getElementById('finalTotal').innerText);
+
+        const payload = {
+            date: new Date().toLocaleDateString('en-GB'),
+            invoiceNumber: document.getElementById('invNum').innerText,
+            customer: document.getElementById('custName').value,
+            phone: document.getElementById('custPhone').value,
+            items: cart.map(i => `${i.name} x${i.qty}`).join(', '),
+            total: total,
+            status: "تم الدفع",
+            cash: method === "كاش" ? total : 0,
+            benefit: method === "بنفت" ? total : 0,
+            paymentDate: new Date().toLocaleDateString('en-GB')
+        };
+
+        try {
+            await fetch(CONFIG.SAVE_WEBHOOK, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            window.print();
+            location.reload();
+        } catch (err) { alert("خطأ في الاتصال بـ n8n"); }
+    }
+</script>
 </body>
 </html>
