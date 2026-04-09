@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* إعدادات أساسية لضمان الظهور داخل قوقل سايت */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 10px;
+            display: block; /* تغيير من flex لتفادي مشاكل الـ iframe */
+        }
+
+        .wrapper {
+            max-width: 450px;
+            margin: 20px auto; /* التوسيط يدوي لضمان العمل */
+        }
+
+        #lock-screen, .main-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-top: 6px solid #d71920;
+            text-align: center;
+        }
+
+        #main-content { display: none; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box; /* ضروري لعدم خروج الحقول عن الإطار */
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #d71920;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* التبويبات */
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #eee; padding: 5px; border-radius: 10px; }
+        .tab { flex: 1; padding: 10px; cursor: pointer; border-radius: 7px; font-weight: bold; color: #666; font-size: 14px; }
+        .tab.active { background: #d71920; color: white; }
+
+        .payment-grid, .report-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
+            background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px;
+        }
+
+        @media (max-width: 400px) { .payment-grid, .report-grid { grid-template-columns: 1fr; } }
+
+        label { display: block; text-align: right; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #333; }
+        .success-msg { color: green; font-weight: bold; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div id="lock-screen">
+        <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+        <h2 style="margin-bottom: 20px;">نظام مغسلة الخدمة المميزة المحمي</h2>
+        <input type="password" id="passInput" placeholder="أدخل الرقم السري" style="text-align: center;">
+        <button onclick="checkPass()">دخول للنظام</button>
+        <p id="err" style="color:red; display:none; margin-top:10px;">الرقم السري خطأ!</p>
+    </div>
+
+    <div id="main-content">
+        <div class="main-card">
+            <div class="tabs">
+                <div class="tab active" onclick="showSection('entry', this)">تسجيل</div>
+                <div class="tab" onclick="showSection('report', this)">تقارير</div>
+            </div>
+
+            <div id="entrySec">
+                <form id="fForm">
+                    <label>نوع العملية</label>
+                    <select id="t"><option value="مبيعات">مبيعات (+)</option><option value="مصروفات">مصروفات (-)</option></select>
+                    <label>الوصف</label>
+                    <input type="text" id="d" placeholder="الوصف" required>
+                    <div class="payment-grid">
+                        <div><label>كاش</label><input type="number" id="c" step="0.001" value="0.000"></div>
+                        <div><label>بنفت</label><input type="number" id="b" step="0.001" value="0.000"></div>
+                    </div>
+                    <button type="submit" id="sBtn">حفظ البيانات</button>
+                </form>
+            </div>
+
+            <div id="reportSec" style="display:none;">
+                <label>اختر الفترة</label>
+                <select id="p" onchange="document.getElementById('cDates').style.display = (this.value=='custom'?'grid':'none')">
+                    <option value="today">اليوم</option>
+                    <option value="month">الشهر</option>
+                    <option value="custom">فترة مخصصة</option>
+                </select>
+                <div id="cDates" class="report-grid" style="display:none;">
+                    <div><label>من</label><input type="date" id="sd"></div>
+                    <div><label>إلى</label><input type="date" id="ed"></div>
+                </div>
+                <button onclick="sendReport()">إرسال التقرير للواتساب</button>
+            </div>
+            <p id="ok" class="success-msg">✅ تم التنفيذ بنجاح!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const URL = 'https://n8n.awj-bh.cloud/webhook/accounting-system';
+
+    function checkPass() {
+        if(document.getElementById('passInput').value === '0005') {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        } else {
+            document.getElementById('err').style.display = 'block';
+        }
+    }
+
+    function showSection(sec, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('entrySec').style.display = (sec=='entry'?'block':'none');
+        document.getElementById('reportSec').style.display = (sec=='report'?'block':'none');
+    }
+
+    // إرسال البيانات
+    document.getElementById('fForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('sBtn');
+        btn.disabled = true;
+        const data = {
+            request_type: 'new_entry',
+            date: new Date().toLocaleDateString('en-CA'),
+            type: document.getElementById('t').value,
+            description: document.getElementById('d').value,
+            cash_amount: document.getElementById('c').value,
+            benefit_amount: document.getElementById('b').value,
+            total_amount: (parseFloat(document.getElementById('c').value) + parseFloat(document.getElementById('b').value)).toFixed(3)
+        };
+        const res = await fetch(URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+        if(res.ok) {
+            document.getElementById('ok').style.display='block';
+            document.getElementById('fForm').reset();
+            setTimeout(()=>document.getElementById('ok').style.display='none', 3000);
+        }
+        btn.disabled = false;
+    };
+
+    async function sendReport() {
+        const data = {
+            request_type: 'generate_report',
+            period: document.getElementById('p').value,
+            start_date: document.getElementById('sd').value,
+            end_date: document.getElementById('ed').value
+        };
+        await fetch(URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+        document.getElementById('ok').style.display='block';
+        setTimeout(()=>document.getElementById('ok').style.display='none', 3000);
+    }
+</script>
+</body>
+</html>
