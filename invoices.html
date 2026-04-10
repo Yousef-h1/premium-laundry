@@ -11,19 +11,26 @@
         html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; background-color: var(--bg); width: 100%; }
         body { font-family: 'Tajawal', sans-serif; display: flex; flex-direction: column; }
         
-        #loginOverlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 999999; padding: 20px; }
-        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); width: 100%; max-width: 350px; text-align: center; }
+        /* جعل واجهة الدخول شفافة مع تأثير ضبابي */
+        #loginOverlay { position: fixed; inset: 0; background: rgba(37, 99, 235, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 999999; padding: 20px; }
+        .login-card { background: rgba(255, 255, 255, 0.9); padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 350px; text-align: center; }
         .login-card input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 1.8rem; text-align: center; outline: none; letter-spacing: 5px; }
         
-        .main-container { width: 100%; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 0; height: 100vh; overflow: hidden; }
+        /* تحسين الحاويات للجوال */
+        .main-container { width: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 0; height: 100vh; }
         #mainApp { display: none; width: 100%; height: 100%; }
         
         .input-panel { background: #fff; padding: 20px; box-sizing: border-box; border-left: 1px solid #e2e8f0; overflow-y: auto; height: 100vh; }
         .invoice-preview { background: #fff; padding: 20px; box-sizing: border-box; overflow-y: auto; height: 100vh; border-right: 2px solid #f1f5f9; position: relative; }
         
+        /* تعديلات الجوال الصارمة */
         @media (max-width: 900px) { 
-            .main-container { grid-template-columns: 1fr; overflow-y: auto; display: block; } 
-            .input-panel, .invoice-preview { height: auto; min-height: unset; overflow-y: visible; }
+            .main-container { display: flex; flex-direction: column; height: auto; overflow-y: visible; } 
+            .input-panel, .invoice-preview { height: auto; min-height: unset; overflow-y: visible; width: 100%; border: none; padding: 15px; }
+            .invoice-preview { border-top: 5px solid var(--primary); margin-top: 20px; padding-bottom: 100px; }
+            /* إصلاح زر الحذف في الجوال ليكون داخل البطاقة */
+            .remove-btn { position: relative !important; left: 0 !important; top: 0 !important; float: left; margin-bottom: -25px; background: #fee2e2 !important; padding: 5px 10px !important; border-radius: 8px !important; z-index: 10; }
+            input, select, button { font-size: 16px !important; } /* يمنع الزوم التلقائي في الآيفون */
         }
 
         .form-group { margin-bottom: 12px; }
@@ -37,24 +44,22 @@
         .service-options { display: flex; gap: 8px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
         .option-item { flex: 1; position: relative; text-align: center; }
         .option-item input { position: absolute; opacity: 0; }
-        .option-item span { display: block; padding: 10px 2px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; }
+        .option-item span { display: block; padding: 12px 2px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
         .option-item input:checked + span { background: var(--primary); color: white; font-weight: bold; }
         
-        .btn-add { background: var(--success); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; font-size: 1rem; }
-        .btn-print { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn-add { background: var(--success); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        .btn-print { background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         
         .bill-table { width: 100%; margin-top: 15px; border-top: 2px solid #333; }
-        .bill-item-row { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; flex-direction: column; position: relative; }
+        .bill-item-row { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; flex-direction: column; position: relative; }
         .item-main-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; color: #000; }
-        .item-sub-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: #444; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; }
-        .remove-btn { position: absolute; left: -30px; top: 12px; color: var(--danger); cursor: pointer; border: none; background: none; }
+        .item-sub-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: #444; margin-top: 6px; border-top: 1px dashed #eee; padding-top: 6px; }
 
         .inv-meta { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ddd; font-size: 0.85rem; }
-        .total-box { margin-top: 20px; padding: 15px; background: #1e293b; color: #fff; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .total-box { margin-top: 20px; padding: 20px; background: #1e293b; color: #fff; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
         .search-box { background: #f1f5f9; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         
-        .discount-container { margin-top: 15px; display: flex; align-items: center; gap: 5px; background: #f8fafc; padding: 8px; border-radius: 10px; border: 1px dashed #cbd5e1; }
-        .discount-container input { padding: 8px; border: 1px solid #ddd; border-radius: 8px; flex: 1; }
+        .discount-container { margin-top: 15px; display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px dashed #cbd5e1; }
 
         @media print { 
             .no-print, #loginOverlay, .remove-btn { display: none !important; } 
@@ -70,7 +75,7 @@
     <div class="login-card">
         <h2 style="color:var(--primary)">الخدمة المميزة 🧺</h2>
         <p>أدخل الرقم السري للدخول</p>
-        <input type="password" id="mainPassInput" placeholder="••••" maxlength="4">
+        <input type="password" id="mainPassInput" placeholder="••••" maxlength="4" inputmode="numeric">
         <button class="btn-add" style="background:var(--primary)" onclick="handleAppLogin()">دخول النظام</button>
     </div>
 </div>
@@ -79,14 +84,14 @@
     <div class="input-panel no-print">
         <div class="search-box">
             <label>🔍 بحث سريع (رقم فاتورة/هاتف)</label>
-            <input type="text" id="searchInput" placeholder="ابحث هنا..." onkeypress="handleSearch(event)">
+            <input type="text" id="searchInput" placeholder="ابحث هنا..." onkeypress="handleSearch(event)" inputmode="search">
         </div>
 
-        <h4 style="margin:0 0 12px">بيانات العميل</h4>
+        <h4 style="margin:0 0 12px; color:var(--primary)">بيانات العميل</h4>
         <div class="form-group"><input type="text" id="custName" placeholder="الاسم / Name"></div>
         <div class="form-group"><input type="tel" id="custPhone" placeholder="الهاتف / Phone"></div>
         
-        <h4 style="margin:15px 0 10px">الخدمات Services</h4>
+        <h4 style="margin:15px 0 10px; color:var(--primary)">الخدمات Services</h4>
         <div class="form-group">
             <select id="itemType" onchange="togglePriceInput()">
                 <optgroup label="عامة | General">
@@ -133,12 +138,12 @@
 
         <div id="customPriceContainer">
             <label>السعر اليدوي (BHD)</label>
-            <input type="number" id="customPrice" step="0.100" placeholder="0.000">
+            <input type="number" id="customPrice" step="0.100" placeholder="0.000" inputmode="decimal">
         </div>
 
         <div id="overridePriceContainer">
             <label>تعديل السعر (اختياري)</label>
-            <input type="number" id="overridePrice" step="0.100" placeholder="0.000">
+            <input type="number" id="overridePrice" step="0.100" placeholder="0.000" inputmode="decimal">
         </div>
 
         <div class="service-options">
@@ -147,11 +152,11 @@
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
-            <input type="number" id="qty" value="1" min="1">
+            <input type="number" id="qty" value="1" min="1" inputmode="numeric">
             <select id="urgentType"><option value="1" data-label="عادي">عادي</option><option value="2" data-label="مستعجل">مستعجل X2</option></select>
         </div>
 
-        <button class="btn-add" style="margin-top:15px" onclick="addItem()">إضافة للطلب +</button>
+        <button class="btn-add" style="margin-top:20px" onclick="addItem()">إضافة للطلب +</button>
     </div>
 
     <div class="invoice-preview" id="invoice">
@@ -174,13 +179,13 @@
 
         <div class="discount-container no-print">
             <label style="margin:0; font-size:0.8rem">خصم (BHD):</label>
-            <input type="number" id="discountAmount" step="0.100" placeholder="0.000">
-            <button class="btn-apply-discount" style="background:var(--warning); color:white; border:none; padding:5px 10px; border-radius:5px" onclick="applyDiscount()">تطبيق</button>
+            <input type="number" id="discountAmount" step="0.100" placeholder="0.000" inputmode="decimal">
+            <button class="btn-apply-discount" style="background:var(--warning); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:bold" onclick="applyDiscount()">تطبيق</button>
         </div>
 
         <div class="total-box">
-            <span>الإجمالي Net Total</span>
-            <span id="finalTotal" style="font-weight:900; font-size:1.4rem">0.000</span>
+            <span>إجمالي الفاتورة</span>
+            <span id="finalTotal" style="font-weight:900; font-size:1.6rem">0.000</span>
         </div>
         
         <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد وطباعة 🖨️</button>
@@ -197,7 +202,7 @@
     function handleAppLogin() {
         if (document.getElementById('mainPassInput').value === APP_PASS) {
             document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'grid';
+            document.getElementById('mainApp').style.display = 'flex';
         } else {
             alert("⚠️ الرقم السري خاطئ!");
         }
@@ -262,6 +267,10 @@
         renderBill();
         document.getElementById('overridePrice').value = "";
         document.getElementById('customPrice').value = "";
+        
+        if(window.innerWidth < 900) {
+            document.getElementById('invoice').scrollIntoView({behavior: 'smooth'});
+        }
     }
 
     function removeItem(id) {
@@ -283,7 +292,6 @@
             const row = document.createElement('div');
             row.className = 'bill-item-row';
             row.innerHTML = `
-                <button class="remove-btn no-print" onclick="removeItem(${i.id})">✕</button>
                 <div class="item-main-info">
                     <span>${i.name}</span>
                     <span>${i.price.toFixed(3)}</span>
@@ -292,6 +300,7 @@
                     <span>الكمية: ${i.qty} | ${i.mode}</span>
                     <span style="font-weight:bold">${i.urgency}</span>
                 </div>
+                <button class="remove-btn no-print" onclick="removeItem(${i.id})">حذف ✕</button>
             `;
             container.appendChild(row);
             total += i.price;
