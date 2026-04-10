@@ -2,14 +2,22 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تطبيق الإدارة</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="إدارة المغسلة">
+    
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Tajawal', sans-serif;
             background-color: #f0f9ff;
+            -webkit-tap-highlight-color: transparent;
         }
         .app-container {
             max-width: 480px;
@@ -22,77 +30,78 @@
             overflow: hidden;
         }
         .main-button {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
-            display: flex; /* لضمان تنسيق الرابط كزر */
+            display: flex;
+            touch-action: manipulation;
         }
         .main-button:active {
-            transform: scale(0.95);
+            transform: scale(0.96);
             opacity: 0.9;
         }
         .logo-img {
-            width: 260px;
+            width: 240px;
             height: auto;
             object-fit: contain;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
         }
+        /* تحسين مظهر شريط الحالة في الآيفون */
+        .safe-area-pt { padding-top: env(safe-area-inset-top); }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         
-        <header class="flex flex-col items-center justify-center pt-14 pb-10 px-6 bg-gradient-to-b from-blue-50 to-white">
+        <header class="flex flex-col items-center justify-center pt-16 pb-10 px-6 bg-gradient-to-b from-blue-50 to-white safe-area-pt">
             <div class="mb-2">
-                <img src="https://lh3.googleusercontent.com/sitesv/APaQ0SRCKn8kx5jkxsoEv5V7Z7dKpvHLXmR4u_pnco3XdGA-MJp7KrfMk76NwIzUdnLBX5S0-DZdVaRuYp9DA1QURLzIL5Gd-JkLqzckWjCTre-9tsLON7gE7EsVkd2RHXuWUhed3ndhvw2VBhd7Ls57djS-uzw0oZFcymeuGR3NSbnUt2Y0gnwLYYaSmgD2G1RZBOj8ezqZnNIU2AsRvELxOLLcZF7si7o5Z_lI=w1280" 
-                     alt="Logo" 
-                     class="logo-img">
+                <img src="logo.png" alt="Logo" class="logo-img">
             </div>
-            <div class="w-16 h-1 bg-blue-100 rounded-full mt-4"></div>
+            <div class="w-16 h-1 bg-blue-100 rounded-full mt-6"></div>
         </header>
 
-        <div class="px-8 mb-10 text-center">
-            <h2 class="text-xl font-bold text-slate-800">تطبيق الإدارة</h2>
-            <p class="text-slate-500 text-sm mt-1">يرجى اختيار القسم للمتابعة</p>
+        <div class="px-8 mb-8 text-center">
+            <h2 class="text-xl font-black text-slate-800">نظام الإدارة المركزي</h2>
+            <p class="text-slate-500 text-sm mt-1">اختر القسم الذي تود إدارته الآن</p>
         </div>
 
         <main class="flex-grow px-6 space-y-5 pb-10">
             
-            <a href="dashboard.html" class="main-button w-full items-center justify-between bg-blue-600 text-white p-6 rounded-3xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 decoration-none">
+            <a href="dashboard.html" class="main-button w-full items-center justify-between bg-blue-600 text-white p-6 rounded-[2rem] shadow-lg shadow-blue-500/30 hover:bg-blue-700 decoration-none">
                 <div class="flex items-center gap-4 text-right">
-                    <div class="bg-white/20 p-3 rounded-xl">
+                    <div class="bg-white/20 p-3 rounded-2xl text-white">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                     <div>
-                        <span class="block text-xl font-bold">لوحة التحكم</span>
-                        <span class="block text-xs text-blue-100 font-normal">الإحصائيات ومراقبة الأداء</span>
+                        <span class="block text-xl font-black">لوحة التحكم</span>
+                        <span class="block text-xs text-blue-100 font-normal">مراقبة الأداء والطلبات</span>
                     </div>
                 </div>
                 <svg class="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </a>
 
-            <a href="accounting.html" class="main-button w-full items-center justify-between bg-white text-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 hover:bg-slate-50 decoration-none">
+            <a href="accounting.html" class="main-button w-full items-center justify-between bg-white text-slate-800 p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:bg-slate-50 decoration-none">
                 <div class="flex items-center gap-4 text-right">
-                    <div class="bg-blue-50 p-3 rounded-xl text-blue-600">
+                    <div class="bg-slate-50 p-3 rounded-2xl text-blue-600">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                     </div>
                     <div>
-                        <span class="block text-xl font-bold">المحاسبة</span>
-                        <span class="block text-xs text-slate-400 font-normal">التقارير المالية والمصروفات</span>
+                        <span class="block text-xl font-black text-slate-700">المحاسبة</span>
+                        <span class="block text-xs text-slate-400 font-normal">التقارير المالية والمبيعات</span>
                     </div>
                 </div>
                 <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </a>
 
-            <a href="invoices.html" class="main-button w-full items-center justify-between bg-white text-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 hover:bg-slate-50 decoration-none">
+            <a href="invoices.html" class="main-button w-full items-center justify-between bg-white text-slate-800 p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:bg-slate-50 decoration-none">
                 <div class="flex items-center gap-4 text-right">
-                    <div class="bg-green-50 p-3 rounded-xl text-green-600">
+                    <div class="bg-green-50 p-3 rounded-2xl text-green-600">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     </div>
                     <div>
-                        <span class="block text-xl font-bold text-green-700">إنشاء الفواتير</span>
-                        <span class="block text-xs text-slate-400 font-normal">تسجيل طلبات العملاء الجديدة</span>
+                        <span class="block text-xl font-black text-green-700">إنشاء فاتورة</span>
+                        <span class="block text-xs text-slate-400 font-normal">تسجيل طلبات جديدة</span>
                     </div>
                 </div>
                 <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -100,8 +109,8 @@
 
         </main>
 
-        <footer class="pb-6 text-center">
-            <p class="text-[10px] text-slate-300">نظام الإدارة الداخلي v1.0</p>
+        <footer class="pb-10 text-center">
+            <p class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Premium Service Laundry v1.0</p>
         </footer>
 
     </div>
