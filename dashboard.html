@@ -15,12 +15,24 @@
         .modal-content { width: 100%; border-radius: 1.5rem 1.5rem 0 0; animation: slideUp 0.3s ease-out; }
         @media (min-width: 640px) { .modal-content { width: 400px; border-radius: 1.5rem; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* شاشة القفل */
+        #lockScreen { position: fixed; inset: 0; background: #1e40af; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .lock-card { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body class="p-3 md:p-6 text-right pb-10">
 
-    <div class="max-w-md mx-auto md:max-w-7xl">
+    <div id="lockScreen">
+        <div class="lock-card">
+            <div class="text-4xl mb-4">🔐</div>
+            <h2 class="text-xl font-black mb-6 text-slate-800">نظام الإدارة</h2>
+            <input type="password" id="passInput" placeholder="كلمة المرور" class="w-full p-4 rounded-xl border-2 border-slate-100 text-center text-2xl font-bold mb-4 outline-none focus:border-blue-500 transition-all">
+            <button onclick="checkPass()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700">دخول</button>
+        </div>
+    </div>
+
+    <div id="mainContent" class="hidden max-w-md mx-auto md:max-w-7xl">
         <header class="bg-white p-4 rounded-2xl shadow-sm mb-4 border border-slate-200">
             <div class="flex justify-between items-start">
                 <div>
@@ -67,13 +79,11 @@
         <div class="modal-content bg-white p-6 shadow-2xl text-right border-t border-slate-200">
             <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
             <h2 class="text-lg font-black mb-6 text-slate-800 text-center">تأكيد استلام الدفع</h2>
-            
             <div class="space-y-4 mb-6">
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <label class="text-[10px] font-bold text-slate-400 block mb-1">المبلغ المطلوب:</label>
                     <input id="modalTotal" type="text" disabled class="w-full bg-transparent font-black text-2xl text-slate-800 outline-none">
                 </div>
-                
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
                         <label class="text-[10px] font-black text-blue-600 block mb-1 uppercase">بنفت (I)</label>
@@ -85,7 +95,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="space-y-3 safe-area">
                 <button id="submitPayBtn" onclick="submitPayment('تم الدفع')" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-lg uppercase">تأكيد الإتمام ✅</button>
                 <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl active:scale-95 transition-all">إلغاء</button>
@@ -94,6 +103,18 @@
     </div>
 
     <script>
+        // التحقق من كلمة المرور
+        function checkPass() {
+            const pass = document.getElementById('passInput').value;
+            if (pass === '0005') {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+                fetchData();
+            } else {
+                alert('كلمة المرور خاطئة!');
+            }
+        }
+
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVDfAAvXCHzUgySBRT3p61ZnQ49HdR0UUwLDpTTar9_hWyYjQKtKv6lMvbFYteHgorJ07XUUw86ut2/pub?gid=0&single=true&output=csv';
         const n8nWebhookUrl = 'https://n8n.awj-bh.cloud/webhook/update-status';
         let currentInv = null;
@@ -160,18 +181,18 @@
                     const statusClass = isPaid ? "bg-green-100 text-green-700" : (status === "ملغي" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-600");
                     const card = `
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
-                            <div class="flex flex-col">
-                                <span class="text-[10px] font-bold text-slate-400 mb-1">#${invId}</span>
-                                <span class="text-sm font-black text-slate-800 leading-tight">${name}</span>
-                                <span class="text-xs font-bold text-blue-600 mt-1">${totalValF.toFixed(3)} BHD</span>
+                            <div class="flex flex-col space-y-0">
+                                <span class="text-[11px] font-bold text-slate-400 mb-0">#${invId}</span>
+                                <span class="text-base font-black text-slate-800 leading-tight">${name}</span>
+                                <span class="text-sm font-bold text-blue-700 mt-1">${totalValF.toFixed(3)} BHD</span>
                             </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusClass}">${status || 'قيد الانتظار'}</span>
+                            <div class="flex flex-col items-end space-y-2">
+                                <span class="px-3 py-1 rounded-md text-[11px] font-black uppercase ${statusClass}">${status || 'قيد الانتظار'}</span>
                                 <div class="flex gap-1">
                                     ${(!isPaid && status !== 'ملغي') ? 
-                                    `<button onclick="openModal('${invId}', '${totalValF}')" class="bg-blue-600 text-white text-[10px] px-3 py-2 rounded-lg font-bold">دفع</button>
-                                     <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[10px] px-3 py-2 rounded-lg border border-red-100">إلغاء</button>` : 
-                                    `<span class="text-slate-400 text-[9px] font-bold italic">${isPaid ? 'مكتمل ✅' : 'ملغي ✕'}</span>`}
+                                    `<button onclick="openModal('${invId}', '${totalValF}')" class="bg-blue-600 text-white text-[11px] px-4 py-2 rounded-lg font-black shadow-sm">دفع</button>
+                                     <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[11px] px-4 py-2 rounded-lg border border-red-100 font-bold">إلغاء</button>` : 
+                                    `<span class="text-slate-400 text-[10px] font-black italic">${isPaid ? 'مكتمل ✅' : 'ملغي ✕'}</span>`}
                                 </div>
                             </div>
                         </div>`;
@@ -229,8 +250,6 @@
         }
 
         document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('ar-BH');
-        fetchData();
-        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
