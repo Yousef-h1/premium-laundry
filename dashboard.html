@@ -2,91 +2,93 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم Premium Service Laundry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Laundry Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
-        .stat-card { border-radius: 1.25rem; transition: transform 0.2s; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 50; }
-        .bg-gradient-daily { background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+        .safe-area { padding-bottom: env(safe-area-inset-bottom); }
+        .stat-card { border-radius: 1rem; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); align-items: flex-end; justify-content: center; z-index: 100; }
+        @media (min-width: 640px) { .modal { align-items: center; } }
+        .modal-content { width: 100%; border-radius: 1.5rem 1.5rem 0 0; animation: slideUp 0.3s ease-out; }
+        @media (min-width: 640px) { .modal-content { width: 400px; border-radius: 1.5rem; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="p-4 md:p-8 text-right">
+<body class="p-3 md:p-6 text-right pb-10">
 
-    <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800">إدارة المغسلة</h1>
-                <p class="text-slate-500 text-sm">نظام التدقيق المالي الذكي</p>
+    <div class="max-w-md mx-auto md:max-w-7xl">
+        <header class="bg-white p-4 rounded-2xl shadow-sm mb-4 border border-slate-200">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-xl font-black text-slate-800">إدارة المغسلة</h1>
+                    <p class="text-slate-500 text-[10px]">نظام التدقيق المالي الذكي</p>
+                </div>
+                <div class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm" id="currentDateDisplay"></div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="fetchData()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition border border-slate-200">تحديث البيانات ↻</button>
-                <div class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow-lg font-bold text-center" id="currentDateDisplay"></div>
-            </div>
+            <button onclick="fetchData()" class="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold transition border border-slate-200">
+                تحديث البيانات ↻
+            </button>
         </header>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 text-center">
-            <div class="stat-card bg-white p-6 shadow-sm border border-slate-100 border-b-4 border-b-blue-500">
-                <div class="text-blue-500 text-xs font-bold mb-1 uppercase">إجمالي العملاء</div>
-                <div id="totalCustomers" class="text-4xl font-black text-slate-800">--</div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div class="stat-card bg-white p-4 shadow-sm border border-slate-100 border-b-4 border-b-blue-500">
+                <div class="text-blue-500 text-[10px] font-bold mb-1 uppercase text-center">العملاء</div>
+                <div id="totalCustomers" class="text-2xl font-black text-slate-800 text-center">--</div>
             </div>
-            <div class="stat-card bg-white p-6 shadow-sm border border-slate-100 border-b-4 border-b-green-500">
-                <div class="text-green-500 text-xs font-bold mb-1 uppercase">طلبات اليوم</div>
-                <div id="todayOrders" class="text-4xl font-black text-slate-800">--</div>
+            <div class="stat-card bg-white p-4 shadow-sm border border-slate-100 border-b-4 border-b-green-500">
+                <div class="text-green-500 text-[10px] font-bold mb-1 uppercase text-center">طلبات اليوم</div>
+                <div id="todayOrders" class="text-2xl font-black text-slate-800 text-center">--</div>
             </div>
-            <div class="stat-card bg-white p-6 shadow-sm border border-slate-100 border-b-4 border-b-amber-500">
-                <div class="text-amber-500 text-xs font-bold mb-1 uppercase">تحت المعالجة</div>
-                <div id="pendingOrders" class="text-4xl font-black text-slate-800">--</div>
+            <div class="stat-card bg-white p-4 shadow-sm border border-slate-100 border-b-4 border-b-amber-500">
+                <div class="text-amber-500 text-[10px] font-bold mb-1 uppercase text-center">قيد المعالجة</div>
+                <div id="pendingOrders" class="text-2xl font-black text-slate-800 text-center">--</div>
             </div>
-            <div class="stat-card bg-gradient-daily p-6 shadow-xl border-none">
-                <div class="text-blue-100 text-xs font-bold mb-1 uppercase text-right">مبيعات اليوم</div>
-                <div id="dailyRevenue" class="text-3xl font-black text-white">0.000 BHD</div>
+            <div class="stat-card bg-blue-700 p-4 shadow-md border-none">
+                <div class="text-blue-100 text-[10px] font-bold mb-1 uppercase text-center">مبيعات اليوم</div>
+                <div id="dailyRevenue" class="text-lg font-black text-white text-center">0.000</div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-10 text-right">
-            <div class="p-6 border-b border-slate-50 font-bold text-slate-800 text-lg">جدول العمليات المالية</div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b">
-                        <tr>
-                            <th class="px-6 py-4 text-right">الفاتورة</th>
-                            <th class="px-6 py-4 text-right">الاسم</th>
-                            <th class="px-6 py-4 text-right">الإجمالي (F)</th>
-                            <th class="px-6 py-4 text-center">الحالة</th>
-                            <th class="px-6 py-4 text-center border-r">الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100 text-sm text-right"></tbody>
-                </table>
-            </div>
+        <div class="mb-4 flex justify-between items-center px-1">
+            <h2 class="font-bold text-slate-800 text-sm">أحدث العمليات</h2>
+            <span class="text-[10px] text-slate-400">آخر 30 فاتورة</span>
+        </div>
+        
+        <div id="mobileList" class="space-y-3">
+            <div class="text-center py-10 text-slate-400 text-xs">جاري تحميل البيانات...</div>
         </div>
     </div>
 
     <div id="paymentModal" class="modal">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 text-right border border-slate-100">
-            <h2 class="text-xl font-bold mb-6 text-slate-800 text-center">تأكيد استلام الدفع</h2>
-            <div class="space-y-5">
-                <div>
-                    <label class="text-xs font-bold text-slate-400">مبلغ الفاتورة الكلي:</label>
-                    <input id="modalTotal" type="text" disabled class="w-full bg-slate-50 p-3 rounded-lg border font-bold text-slate-700 mt-1 text-center">
+        <div class="modal-content bg-white p-6 shadow-2xl text-right border-t border-slate-200">
+            <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+            <h2 class="text-lg font-black mb-6 text-slate-800 text-center">تأكيد استلام الدفع</h2>
+            
+            <div class="space-y-4 mb-6">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <label class="text-[10px] font-bold text-slate-400 block mb-1">المبلغ المطلوب:</label>
+                    <input id="modalTotal" type="text" disabled class="w-full bg-transparent font-black text-2xl text-slate-800 outline-none">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-blue-600 uppercase font-black">بنفت (I)</label>
-                        <input id="benefitInput" type="number" step="0.001" class="w-full p-3 rounded-lg border border-blue-200 focus:ring-4 focus:ring-blue-100 outline-none font-black text-lg text-blue-800">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                        <label class="text-[10px] font-black text-blue-600 block mb-1 uppercase">بنفت (I)</label>
+                        <input id="benefitInput" type="number" step="0.001" class="w-full bg-transparent text-xl font-black text-blue-800 outline-none">
                     </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-green-600 uppercase font-black">كاش (H)</label>
-                        <input id="cashInput" type="number" step="0.001" class="w-full p-3 rounded-lg border border-green-200 focus:ring-4 focus:ring-green-100 outline-none font-black text-lg text-green-800">
+                    <div class="bg-green-50 p-3 rounded-xl border border-green-100">
+                        <label class="text-[10px] font-black text-green-600 block mb-1 uppercase">كاش (H)</label>
+                        <input id="cashInput" type="number" step="0.001" class="w-full bg-transparent text-xl font-black text-green-800 outline-none">
                     </div>
                 </div>
-                <div class="flex flex-col gap-2 pt-4">
-                    <button id="submitPayBtn" onclick="submitPayment('تم الدفع')" class="w-full bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-800 transition text-xl">تأكيد الإتمام</button>
-                    <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 font-bold py-2 rounded-xl hover:bg-slate-200 transition">إغلاق</button>
-                </div>
+            </div>
+
+            <div class="space-y-3 safe-area">
+                <button id="submitPayBtn" onclick="submitPayment('تم الدفع')" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-lg uppercase">تأكيد الإتمام ✅</button>
+                <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl active:scale-95 transition-all">إلغاء</button>
             </div>
         </div>
     </div>
@@ -127,15 +129,13 @@
             const d = now.getDate().toString().padStart(2, '0');
             const m = (now.getMonth() + 1).toString().padStart(2, '0');
             const y = now.getFullYear().toString();
-            
-            // تحقق مرن من وجود اليوم والشهر والسنة في السلسلة النصية
             return dateString.includes(d) && dateString.includes(m) && dateString.includes(y);
         }
 
         function updateDashboard(rows) {
             let phoneNumbers = new Set(), todayOrdersCount = 0, pendingCount = 0, todayRevenueSum = 0;
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
+            const mobileList = document.getElementById('mobileList');
+            mobileList.innerHTML = '';
 
             [...rows].reverse().forEach((row, index) => {
                 const dateCreated = row[0] || ""; 
@@ -158,29 +158,31 @@
 
                 if (index < 30) {
                     const statusClass = isPaid ? "bg-green-100 text-green-700" : (status === "ملغي" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-600");
-                    const tr = `
-                        <tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                            <td class="px-6 py-4 font-bold text-slate-900">#${invId}</td>
-                            <td class="px-6 py-4 font-medium">${name}</td>
-                            <td class="px-6 py-4 font-bold text-indigo-700">${totalValF.toFixed(3)}</td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${statusClass}">${status || 'تحت المعالجة'}</span>
-                            </td>
-                            <td class="px-6 py-4 text-center border-r flex justify-center gap-2">
-                                ${(!isPaid && status !== 'ملغي') ? 
-                                `<button onclick="openModal('${invId}', '${totalValF}')" class="bg-blue-600 text-white text-[10px] px-4 py-2 rounded-md hover:bg-blue-700 transition">تأكيد الدفع</button>
-                                 <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[10px] px-4 py-2 rounded-md hover:bg-red-100 transition border border-red-200">إلغاء</button>` : 
-                                `<span class="text-slate-400 text-[10px] font-bold italic">${isPaid ? 'مكتمل ✅' : 'ملغاة ✕'}</span>`}
-                            </td>
-                        </tr>`;
-                    tableBody.insertAdjacentHTML('beforeend', tr);
+                    const card = `
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] font-bold text-slate-400 mb-1">#${invId}</span>
+                                <span class="text-sm font-black text-slate-800 leading-tight">${name}</span>
+                                <span class="text-xs font-bold text-blue-600 mt-1">${totalValF.toFixed(3)} BHD</span>
+                            </div>
+                            <div class="flex flex-col items-end gap-2">
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusClass}">${status || 'قيد الانتظار'}</span>
+                                <div class="flex gap-1">
+                                    ${(!isPaid && status !== 'ملغي') ? 
+                                    `<button onclick="openModal('${invId}', '${totalValF}')" class="bg-blue-600 text-white text-[10px] px-3 py-2 rounded-lg font-bold">دفع</button>
+                                     <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[10px] px-3 py-2 rounded-lg border border-red-100">إلغاء</button>` : 
+                                    `<span class="text-slate-400 text-[9px] font-bold italic">${isPaid ? 'مكتمل ✅' : 'ملغي ✕'}</span>`}
+                                </div>
+                            </div>
+                        </div>`;
+                    mobileList.insertAdjacentHTML('beforeend', card);
                 }
             });
 
             document.getElementById('totalCustomers').innerText = phoneNumbers.size;
             document.getElementById('todayOrders').innerText = todayOrdersCount;
             document.getElementById('pendingOrders').innerText = pendingCount;
-            document.getElementById('dailyRevenue').innerText = todayRevenueSum.toFixed(3) + " BHD";
+            document.getElementById('dailyRevenue').innerText = todayRevenueSum.toFixed(3);
         }
 
         function openModal(id, amount) {
@@ -211,7 +213,7 @@
                 closeModal();
                 setTimeout(fetchData, 1500); 
             } catch (err) { alert('خطأ في الاتصال'); }
-            finally { btn.disabled = false; btn.innerText = "تأكيد الإتمام"; }
+            finally { btn.disabled = false; btn.innerText = "تأكيد الإتمام ✅"; }
         }
 
         async function cancelInvoice(invId) {
