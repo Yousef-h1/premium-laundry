@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Premium Laundry Dashboard</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="الإدارة">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -19,6 +24,9 @@
         /* شاشة القفل */
         #lockScreen { position: fixed; inset: 0; background: #1e40af; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .lock-card { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        
+        /* تحسينات اللمس للجوال */
+        button { cursor: pointer; touch-action: manipulation; }
     </style>
 </head>
 <body class="p-3 md:p-6 text-right pb-10">
@@ -103,7 +111,6 @@
     </div>
 
     <script>
-        // التحقق من كلمة المرور
         function checkPass() {
             const pass = document.getElementById('passInput').value;
             if (pass === '0005') {
@@ -116,7 +123,7 @@
         }
 
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVDfAAvXCHzUgySBRT3p61ZnQ49HdR0UUwLDpTTar9_hWyYjQKtKv6lMvbFYteHgorJ07XUUw86ut2/pub?gid=0&single=true&output=csv';
-        const n8nWebhookUrl = 'https://n8n.awj-bh.cloud/webhook/update-status';
+        const n8nWebhookUrl = 'https://n8n.awj-bh.cloud/webhook/725f1ccb-6fa7-421d-9b68-8b60322702c3';
         let currentInv = null;
 
         function smartSplit(line) {
@@ -180,19 +187,24 @@
                 if (index < 30) {
                     const statusClass = isPaid ? "bg-green-100 text-green-700" : (status === "ملغي" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-600");
                     const card = `
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
-                            <div class="flex flex-col space-y-0">
-                                <span class="text-[11px] font-bold text-slate-400 mb-0">#${invId}</span>
-                                <span class="text-base font-black text-slate-800 leading-tight">${name}</span>
-                                <span class="text-sm font-bold text-blue-700 mt-1">${totalValF.toFixed(3)} BHD</span>
-                            </div>
-                            <div class="flex flex-col items-end space-y-2">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col space-y-3">
+                            <div class="flex justify-between items-center">
+                                <div class="flex flex-col">
+                                    <span class="text-[16px] font-black text-blue-600 mb-0">#${invId}</span>
+                                    <span class="text-base font-black text-slate-800 leading-tight">${name}</span>
+                                    <span class="text-sm font-bold text-slate-500 mt-1">${totalValF.toFixed(3)} BHD</span>
+                                </div>
                                 <span class="px-3 py-1 rounded-md text-[11px] font-black uppercase ${statusClass}">${status || 'قيد الانتظار'}</span>
-                                <div class="flex gap-1">
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-50">
+                                <button onclick="resendInvoice('${invId}')" class="flex-1 bg-slate-100 text-slate-600 text-[11px] py-3 rounded-xl border border-slate-200 font-bold active:scale-95 transition-all">إعادة إرسال ✉️</button>
+                                
+                                <div class="flex gap-2 flex-1">
                                     ${(!isPaid && status !== 'ملغي') ? 
-                                    `<button onclick="openModal('${invId}', '${totalValF}')" class="bg-blue-600 text-white text-[11px] px-4 py-2 rounded-lg font-black shadow-sm">دفع</button>
-                                     <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[11px] px-4 py-2 rounded-lg border border-red-100 font-bold">إلغاء</button>` : 
-                                    `<span class="text-slate-400 text-[10px] font-black italic">${isPaid ? 'مكتمل ✅' : 'ملغي ✕'}</span>`}
+                                    `<button onclick="openModal('${invId}', '${totalValF}')" class="flex-1 bg-blue-600 text-white text-[11px] py-3 rounded-xl font-black shadow-md active:scale-95 transition-all">دفع</button>
+                                     <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[11px] px-3 py-3 rounded-xl border border-red-100 font-bold active:scale-95 transition-all">إلغاء</button>` : 
+                                    `<div class="flex-1 text-left px-2"><span class="text-slate-400 text-[10px] font-black italic">${isPaid ? 'مكتمل ✅' : 'ملغي ✕'}</span></div>`}
                                 </div>
                             </div>
                         </div>`;
@@ -204,6 +216,19 @@
             document.getElementById('todayOrders').innerText = todayOrdersCount;
             document.getElementById('pendingOrders').innerText = pendingCount;
             document.getElementById('dailyRevenue').innerText = todayRevenueSum.toFixed(3);
+        }
+
+        async function resendInvoice(invId) {
+            if(!confirm('هل تريد إعادة إرسال الفاتورة للعميل؟')) return;
+            try {
+                const response = await fetch(n8nWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoiceId: invId, action: "resend_invoice" })
+                });
+                if(response.ok) { alert('جاري إعادة إرسال الفاتورة...'); } 
+                else { alert('فشل في الإرسال'); }
+            } catch (err) { alert('خطأ في الاتصال'); }
         }
 
         function openModal(id, amount) {
