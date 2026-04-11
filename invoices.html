@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary: #2563eb; --danger: #ef4444; --success: #10b981; --bg: #f8fafc; --warning: #f59e0b; }
+        :root { --primary: #2563eb; --danger: #ef4444; --success: #2563eb; --bg: #f8fafc; --warning: #f59e0b; }
         html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; background-color: var(--bg); width: 100%; }
         body { font-family: 'Tajawal', sans-serif; display: flex; flex-direction: column; }
         
@@ -43,7 +43,7 @@
         .option-item span { display: block; padding: 12px 2px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
         .option-item input:checked + span { background: var(--primary); color: white; font-weight: bold; }
         
-        .btn-add { background: var(--success); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
         .btn-print { background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         
         .bill-table { width: 100%; margin-top: 15px; border-top: 2px solid #333; }
@@ -52,7 +52,8 @@
         .item-sub-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: #444; margin-top: 6px; border-top: 1px dashed #eee; padding-top: 6px; }
 
         .inv-meta { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ddd; font-size: 0.85rem; }
-        .total-box { margin-top: 20px; padding: 20px; background: #1e293b; color: #fff; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .total-box { margin-top: 10px; padding: 15px; background: #1e293b; color: #fff; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .discount-row { display: none; justify-content: space-between; padding: 8px 10px; color: var(--danger); font-weight: bold; font-size: 0.9rem; border-top: 1px dashed #ddd; }
         .search-box { background: #f1f5f9; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
         
         .discount-container { margin-top: 15px; display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px dashed #cbd5e1; width: 100%; box-sizing: border-box; }
@@ -72,7 +73,7 @@
         <h2 style="color:var(--primary)">الخدمة المميزة 🧺</h2>
         <p>أدخل الرقم السري للدخول</p>
         <input type="password" id="mainPassInput" placeholder="••••" maxlength="4" inputmode="numeric">
-        <button class="btn-add" style="background:var(--primary)" onclick="handleAppLogin()">دخول النظام</button>
+        <button class="btn-add" onclick="handleAppLogin()">دخول النظام</button>
     </div>
 </div>
 
@@ -173,18 +174,23 @@
 
         <div id="billBody" class="bill-table"></div>
 
-        <div class="discount-container no-print">
-            <label style="margin:0; font-size:0.8rem">خصم (BHD):</label>
-            <input type="number" id="discountAmount" step="0.100" placeholder="0.000" inputmode="decimal">
-            <button class="btn-apply-discount" style="background:var(--warning); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:bold" onclick="applyDiscount()">تطبيق</button>
+        <div id="discountRow" class="discount-row">
+            <span>الخصم المستحق:</span>
+            <span id="dispDiscount">0.000-</span>
         </div>
 
         <div class="total-box">
             <span>إجمالي الفاتورة</span>
             <span id="finalTotal" style="font-weight:900; font-size:1.6rem">0.000</span>
         </div>
+
+        <div class="discount-container no-print">
+            <label style="margin:0; font-size:0.8rem">خصم (BHD):</label>
+            <input type="number" id="discountAmount" step="0.100" placeholder="0.000" inputmode="decimal">
+            <button class="btn-apply-discount" style="background:var(--warning); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:bold" onclick="applyDiscount()">تطبيق</button>
+        </div>
         
-        <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد وطباعة 🖨️</button>
+        <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد وإرسال الطلب ✅</button>
     </div>
 </div>
 
@@ -302,25 +308,54 @@
             total += i.price;
         });
         
+        const discRow = document.getElementById('discountRow');
+        if(currentDiscount > 0) {
+            discRow.style.display = 'flex';
+            document.getElementById('dispDiscount').innerText = currentDiscount.toFixed(3) + "-";
+        } else {
+            discRow.style.display = 'none';
+        }
+
         const netTotal = Math.max(0, total - currentDiscount);
         document.getElementById('finalTotal').innerText = netTotal.toFixed(3) + " BHD";
     }
 
     async function processAndPrint() {
         if (items.length === 0) return alert("الفاتورة فارغة!");
+        
+        const btn = document.getElementById('printBtn');
+        btn.disabled = true;
+        btn.innerText = "جاري الاعتماد والإرسال...";
+
+        const formattedItems = items.map(i => `• ${i.name} (${i.mode} - ${i.urgency}) x${i.qty}`).join('\n');
+
         const payload = {
             action: 'save',
             invoiceNumber: document.getElementById('invNum').innerText,
             customer: document.getElementById('custName').value,
             phone: document.getElementById('custPhone').value,
             total: document.getElementById('finalTotal').innerText,
-            items: items.map(i => `${i.name} (${i.mode} - ${i.urgency}) x${i.qty}`).join(', ')
+            items: formattedItems,
+            discount: currentDiscount.toFixed(3)
         };
         try {
-            await fetch(WEBHOOK_URL_SAVE, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            window.print();
-            setTimeout(() => location.reload(), 2000);
-        } catch (e) { alert("⚠️ خطأ في الحفظ."); }
+            const response = await fetch(WEBHOOK_URL_SAVE, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(payload) 
+            });
+            
+            if(response.ok) {
+                alert("✅ تم اعتماد الطلب بنجاح");
+                location.reload();
+            } else {
+                throw new Error('Failed to save');
+            }
+        } catch (e) { 
+            alert("⚠️ خطأ في الاتصال بالنظام."); 
+            btn.disabled = false;
+            btn.innerText = "اعتماد وإرسال الطلب ✅";
+        }
     }
 
     document.getElementById('dateNow').innerText = new Date().toLocaleDateString('ar-BH');
