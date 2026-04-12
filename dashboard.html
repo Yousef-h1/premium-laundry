@@ -125,18 +125,6 @@
             } else { alert('كلمة المرور خاطئة!'); }
         }
 
-        function smartSplit(line) {
-            const result = [];
-            let current = '', inQuotes = false;
-            for (let char of line) {
-                if (char === '"') inQuotes = !inQuotes;
-                else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
-                else { current += char; }
-            }
-            result.push(current.trim());
-            return result;
-        }
-
         async function fetchData() {
             const btn = document.getElementById('refreshBtn');
             btn.disabled = true;
@@ -145,9 +133,27 @@
             try {
                 const response = await fetch(`${csvUrl}&cb=${Date.now()}`);
                 const data = await response.text();
-                const lines = data.split(/\r?\n/).filter(l => l.trim() !== "");
-                const rows = lines.slice(1).map(line => smartSplit(line)).filter(r => r.length >= 7);
-                updateDashboard(rows);
+                
+                // المصلح: معالجة البيانات بشكل يحترم الأسطر المتعددة داخل الاقتباسات
+                const rows = [];
+                const pattern = /("(?:[^"]|"")*"|[^,\n\r]*)(,|\r?\n)/g;
+                let currentRow = [];
+                let match;
+                
+                while ((match = pattern.exec(data + '\n')) !== null) {
+                    let val = match[1].trim();
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.slice(1, -1).replace(/""/g, '"');
+                    }
+                    currentRow.push(val);
+                    if (match[2] !== ',') {
+                        if (currentRow.length > 1) rows.push(currentRow);
+                        currentRow = [];
+                    }
+                }
+                
+                const validRows = rows.slice(1).filter(r => r[1] && r[1].trim() !== "");
+                updateDashboard(validRows);
             } catch (err) { console.error("Fetch error", err); }
             finally {
                 btn.disabled = false;
@@ -170,7 +176,7 @@
             const mobileList = document.getElementById('mobileList');
             mobileList.innerHTML = '';
 
-            [...rows].reverse().forEach((row, index) => {
+            [...rows].reverse().forEach((row) => {
                 const dateCreated = row[0] || ""; 
                 const invId = row[1]; 
                 const name = row[2] || "عميل غير معروف"; 
@@ -184,9 +190,8 @@
                 if (status === "تم الدفع" && isMatchToday(datePaidJ)) todayRevenueSum += totalValF;
                 if (status !== "تم الدفع" && status !== "ملغي") pendingCount++;
 
-                if (index < 30) {
-                    const isPaid = (status === "تم الدفع");
-                    const statusClass = isPaid ? "bg-green-100 text-green-700" : (status === "ملغي" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-600");
+                if (status !== "تم الدفع" && status !== "ملغي") {
+                    const statusClass = "bg-amber-100 text-amber-600";
                     const card = `
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col space-y-3">
                             <div class="flex justify-between items-center">
@@ -200,10 +205,8 @@
                             <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-50">
                                 <button onclick="resendInvoice('${invId}')" class="flex-1 bg-slate-50 text-slate-600 text-[11px] py-3 rounded-xl border border-slate-200 font-bold">إعادة إرسال ✉️</button>
                                 <div class="flex gap-2 flex-1">
-                                    ${(!isPaid && status !== 'ملغي') ? 
-                                    `<button onclick="openModal('${invId}', '${totalValF}')" class="flex-1 bg-blue-600 text-white text-[11px] py-3 rounded-xl font-black shadow-md">دفع</button>
-                                     <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[11px] px-3 py-3 rounded-xl border border-red-100 font-bold">إلغاء</button>` : 
-                                    `<div class="flex-1 text-left px-2 self-center"><span class="text-slate-400 text-[10px] font-black italic">${isPaid ? 'مكتمل ✅' : 'ملغي ✕'}</span></div>`}
+                                    <button onclick="openModal('${invId}', '${totalValF}')" class="flex-1 bg-blue-600 text-white text-[11px] py-3 rounded-xl font-black shadow-md">دفع</button>
+                                    <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 text-[11px] px-3 py-3 rounded-xl border border-red-100 font-bold">إلغاء</button>
                                 </div>
                             </div>
                         </div>`;
