@@ -134,7 +134,6 @@
                 const response = await fetch(`${csvUrl}&cb=${Date.now()}`);
                 const data = await response.text();
                 
-                // المصلح: معالجة البيانات بشكل يحترم الأسطر المتعددة داخل الاقتباسات
                 const rows = [];
                 const pattern = /("(?:[^"]|"")*"|[^,\n\r]*)(,|\r?\n)/g;
                 let currentRow = [];
@@ -234,7 +233,8 @@
                 await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invoiceId: currentInv, status: statusType, cash, benefit, paymentDate })
+                    // إضافة notify: false لإلغاء إرسال الرسالة
+                    body: JSON.stringify({ invoiceId: currentInv, status: statusType, cash, benefit, paymentDate, notify: false })
                 });
                 closeModal();
                 setTimeout(fetchData, 2000);
@@ -258,7 +258,8 @@
                 await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invoiceId: invId, status: "ملغي", cash: 0, benefit: 0, paymentDate: "" })
+                    // إضافة notify: false لإلغاء إرسال الرسالة
+                    body: JSON.stringify({ invoiceId: invId, status: "ملغي", cash: 0, benefit: 0, paymentDate: "", notify: false })
                 });
                 setTimeout(fetchData, 1500);
             } catch (err) { alert('خطأ في الاتصال'); }
