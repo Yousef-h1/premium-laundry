@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>إدارة العملاء - Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; }
+        .app-card { transition: transform 0.2s active; }
+        .app-card:active { transform: scale(0.98); }
+        #lockScreen { position: fixed; inset: 0; background: #1e40af; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .lock-card { background: white; padding: 30px; border-radius: 30px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="p-4 pb-24">
+
+    <div id="lockScreen">
+        <div class="lock-card">
+            <a href="index.html" class="absolute top-4 right-4 p-2 bg-slate-50 rounded-full border border-slate-100 text-sm">🏠</a>
+            
+            <div class="text-5xl mb-4 pt-4">🛡️</div>
+            <h2 class="text-xl font-black mb-6 text-slate-800">دخول المسؤول</h2>
+            <input type="password" id="passInput" placeholder="كلمة المرور" 
+                   class="w-full p-4 rounded-2xl border-2 border-slate-100 text-center text-2xl font-bold mb-4 outline-none focus:border-blue-500 transition-all">
+            <button onclick="checkPass()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">دخول النظام</button>
+        </div>
+    </div>
+
+    <div id="mainContent" class="hidden">
+        <header class="max-w-4xl mx-auto mb-6 flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="p-2 bg-slate-50 rounded-2xl border border-slate-100" title="الرئيسية">🏠</a>
+                <div>
+                    <h1 class="text-lg font-black text-slate-800 leading-none">إدارة العملاء</h1>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Mobile Dashboard v2.1</span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="logout()" class="p-2 bg-red-50 text-red-500 rounded-2xl border border-red-100 font-bold text-xs">خروج</button>
+            </div>
+        </header>
+
+        <div class="max-w-4xl mx-auto">
+            <div class="flex bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden p-1">
+                <button onclick="switchTab('search')" id="tabSearch" class="flex-1 py-3 font-black text-sm transition tab-active rounded-xl">🔍 بحث شامل</button>
+                <button onclick="switchTab('credit')" id="tabCredit" class="flex-1 py-3 font-black text-sm text-slate-400 transition rounded-xl">📅 الدفع الشهري (K)</button>
+            </div>
+
+            <div id="sectionSearch" class="space-y-4">
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                    <input type="tel" id="searchPhone" placeholder="رقم الهاتف (33xxxxxx)" 
+                           class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center text-2xl font-black focus:border-blue-500 outline-none transition-all placeholder:text-slate-300">
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="searchInvoices('pending')" class="bg-blue-600 text-white font-black py-4 rounded-2xl shadow-md active:bg-blue-700">غير مدفوع</button>
+                        <button onclick="searchInvoices('all')" class="bg-slate-800 text-white font-black py-4 rounded-2xl shadow-md active:bg-slate-900">تاريخ العميل</button>
+                    </div>
+                </div>
+
+                <div id="bulkAction" class="hidden">
+                    <button onclick="sendBulkWhatsapp()" class="w-full bg-green-600 text-white font-black py-4 rounded-2xl shadow-lg border-b-4 border-green-800 flex items-center justify-center gap-2 text-lg">
+                        <span>📱</span> إرسال مطالبة موحدة
+                    </button>
+                </div>
+
+                <div id="searchResult" class="space-y-3"></div>
+            </div>
+
+            <div id="sectionCredit" class="hidden space-y-4">
+                <div class="bg-blue-50 border-r-4 border-blue-500 p-4 rounded-2xl">
+                    <p class="text-blue-800 text-xs font-bold leading-relaxed text-right">يتم عرض تجميع المبالغ المستحقة للعملاء الدائمين المسجلين مسبقاً في النظام.</p>
+                </div>
+                <div id="creditList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="payModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden z-50 items-end sm:items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl relative">
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
+            <div class="space-y-6">
+                <div class="bg-slate-50 p-6 rounded-3xl border-2 border-slate-100 text-center">
+                    <label class="text-[10px] font-black text-slate-400 block mb-2 uppercase tracking-widest">المبلغ المعدل (BHD)</label>
+                    <input id="editAmount" type="number" step="0.001" class="w-full bg-transparent text-4xl font-black text-slate-800 outline-none text-center">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="processAction()" class="bg-blue-600 text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-all">تأكيد</button>
+                    <button id="whatsappBtn" class="bg-green-500 text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-all">واتساب</button>
+                </div>
+                <button onclick="closeModal()" class="w-full py-4 text-slate-400 font-bold text-sm">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVDfAAvXCHzUgySBRT3p61ZnQ49HdR0UUwLDpTTar9_hWyYjQKtKv6lMvbFYteHgorJ07XUUw86ut2/pub?gid=0&single=true&output=csv';
+        const n8nWebhookUrl = 'https://n8n.awj-bh.cloud/webhook/update-status';
+        let allData = [];
+        let activeInvoice = null;
+        let currentSearchResults = [];
+
+        function checkPass() {
+            const pass = document.getElementById('passInput').value;
+            if (pass === '0005') {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+                loadData();
+            } else {
+                alert('كلمة المرور خاطئة!');
+            }
+        }
+
+        function logout() {
+            document.getElementById('passInput').value = '';
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('lockScreen').style.display = 'flex';
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${csvUrl}&cb=${Date.now()}`);
+                const data = await res.text();
+                const rows = [];
+                const pattern = /("(?:[^"]|"")*"|[^,\n\r]*)(,|\r?\n)/g;
+                let currentRow = [];
+                let match;
+                while ((match = pattern.exec(data + '\n')) !== null) {
+                    let val = match[1].trim();
+                    if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1).replace(/""/g, '"');
+                    currentRow.push(val);
+                    if (match[2] !== ',') { if (currentRow.length > 1) rows.push(currentRow); currentRow = []; }
+                }
+                allData = rows.slice(1);
+            } catch (e) { console.error(e); }
+        }
+
+        function switchTab(tab) {
+            document.getElementById('sectionSearch').classList.toggle('hidden', tab !== 'search');
+            document.getElementById('sectionCredit').classList.toggle('hidden', tab !== 'credit');
+            document.getElementById('tabSearch').classList.toggle('tab-active', tab === 'search');
+            document.getElementById('tabCredit').classList.toggle('tab-active', tab === 'credit');
+            if(tab === 'credit') renderCreditList();
+        }
+
+        async function searchInvoices(type) {
+            const phone = document.getElementById('searchPhone').value.trim();
+            if(!phone) return;
+            await loadData();
+            currentSearchResults = [...allData].reverse().filter(row => {
+                const matchPhone = row[3] && row[3].includes(phone);
+                return type === 'pending' ? (matchPhone && row[6] !== 'تم الدفع' && row[6] !== 'ملغي') : matchPhone;
+            });
+            document.getElementById('bulkAction').classList.toggle('hidden', type !== 'pending' || currentSearchResults.length === 0);
+            renderResults(currentSearchResults);
+        }
+
+        function renderResults(results) {
+            const container = document.getElementById('searchResult');
+            container.innerHTML = results.length ? '' : '<p class="text-center py-20 text-slate-300 font-bold">لا يوجد سجلات</p>';
+            results.forEach(row => {
+                const amount = parseFloat(row[5]?.replace(/[^\d.]/g, '') || 0).toFixed(3);
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm mb-4 app-card">
+                        <div class="flex justify-between items-center mb-3 text-sm font-black text-blue-600">
+                            <span>#${row[1]}</span>
+                            <span class="bg-blue-50 px-3 py-1 rounded-full uppercase text-[10px]">${row[6] || 'انتظار'}</span>
+                        </div>
+                        <div class="text-sm font-black text-slate-800">${row[2]}</div>
+                        <div class="text-[10px] font-bold text-slate-400 mb-2">${row[0]}</div>
+                        <div class="bg-slate-50 p-3 rounded-2xl text-[11px] border mb-4 whitespace-pre-line">${row[4] || "لا توجد تفاصيل"}</div>
+                        <div class="flex justify-between items-center pt-3 border-t">
+                            <span class="text-xl font-black text-slate-900">${amount} BHD</span>
+                            <button onclick="openActionModal('${row[1]}', '${amount}', '${row[3]}')" class="bg-slate-900 text-white px-6 py-3 rounded-2xl text-xs font-black">إدارة</button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        async function renderCreditList() {
+            await loadData();
+            const container = document.getElementById('creditList');
+            container.innerHTML = '<p class="text-center py-20 animate-pulse font-bold text-slate-400">جاري المزامنة...</p>';
+            const creditMap = {};
+            const allowedPhones = new Set(allData.map(r => r[10]?.trim()).filter(p => p && p.length > 3));
+            allData.forEach(row => {
+                const phone = row[3]?.trim();
+                if(row[6] !== 'تم الدفع' && row[6] !== 'ملغي' && allowedPhones.has(phone)) {
+                    const date = row[0];
+                    if(date) {
+                        const month = date.split('/')[1] + '/' + date.split('/')[2];
+                        const key = `${phone}_${month}`;
+                        const amount = parseFloat(row[5]?.replace(/[^\d.]/g, '') || 0);
+                        if(!creditMap[key]) creditMap[key] = { name: row[2], phone, month, total: 0, count: 0 };
+                        creditMap[key].total += amount;
+                        creditMap[key].count++;
+                    }
+                }
+            });
+            container.innerHTML = '';
+            Object.values(creditMap).forEach(c => {
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm border-r-[12px] border-r-blue-600 mb-4 app-card">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase">سجل: ${c.month}</span>
+                            <span class="text-[10px] font-bold text-slate-400">${c.count} فواتير</span>
+                        </div>
+                        <h3 class="font-black text-slate-800 text-lg">${c.name}</h3>
+                        <div class="flex justify-between items-center pt-5 border-t mt-4">
+                            <span class="text-2xl font-black">${c.total.toFixed(3)} BHD</span>
+                            <button onclick="shareMonthly('${c.phone}', '${c.name}', '${c.month}', '${c.total.toFixed(3)}')" class="bg-green-600 text-white p-4 rounded-2xl">📱</button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function openActionModal(id, amt, phone) {
+            activeInvoice = { id, amount: parseFloat(amt), phone };
+            document.getElementById('editAmount').value = activeInvoice.amount.toFixed(3);
+            document.getElementById('payModal').classList.remove('hidden');
+            document.getElementById('payModal').classList.add('flex');
+            document.getElementById('whatsappBtn').onclick = () => {
+                const msg = encodeURIComponent(`فاتورتك #${id}\nالمبلغ: ${activeInvoice.amount.toFixed(3)} BHD`);
+                window.open(`https://wa.me/973${phone}?text=${msg}`);
+            };
+        }
+
+        function closeModal() { document.getElementById('payModal').classList.add('hidden'); }
+
+        async function processAction() {
+            const btn = event.target;
+            const newAmt = document.getElementById('editAmount').value;
+            btn.disabled = true; btn.innerText = "...";
+            try {
+                await fetch(n8nWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoiceId: activeInvoice.id, status: 'تم الدفع', benefit: newAmt, notify: false })
+                });
+                closeModal();
+                searchInvoices('pending');
+            } catch(e) { alert("خطأ في الاتصال"); }
+            finally { btn.disabled = false; btn.innerText = "تأكيد"; }
+        }
+
+        function shareMonthly(phone, name, month, total) {
+            const msg = encodeURIComponent(`مرحباً ${name}، كشف حساب شهر ${month}\nالمجموع: ${total} BHD`);
+            window.open(`https://wa.me/973${phone}?text=${msg}`);
+        }
+
+        function sendBulkWhatsapp() {
+            if (!currentSearchResults.length) return;
+            const name = currentSearchResults[0][2];
+            const phone = currentSearchResults[0][3];
+            let total = 0;
+            let msg = `مرحباً ${name}، فواتيرك غير المدفوعة:\n`;
+            currentSearchResults.forEach((r, i) => {
+                const amt = parseFloat(r[5]?.replace(/[^\d.]/g, '') || 0);
+                total += amt;
+                msg += `${i+1}. #${r[1]} - ${amt.toFixed(3)} BHD\n`;
+            });
+            msg += `المجموع: ${total.toFixed(3)} BHD`;
+            window.open(`https://wa.me/973${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
