@@ -25,6 +25,26 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             border-top: 6px solid #d71920;
             text-align: center;
+            position: relative;
+        }
+
+        /* زر العودة الموحد */
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            text-decoration: none;
+            color: #d71920;
+            font-size: 20px;
+            font-weight: bold;
+            background: #f9f9f9;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid #eee;
         }
 
         #main-content { display: none; }
@@ -71,6 +91,7 @@
 
 <div class="wrapper">
     <div id="lock-screen">
+        <a href="index.html" class="back-btn">→</a>
         <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
         <h2 style="margin-bottom: 20px;">نظام مغسلة الخدمة المميزة المحمي</h2>
         <input type="password" id="passInput" placeholder="أدخل الرقم السري" style="text-align: center;">
@@ -80,6 +101,7 @@
 
     <div id="main-content">
         <div class="main-card">
+            <a href="index.html" class="back-btn">→</a>
             <div class="tabs">
                 <div class="tab active" onclick="showSection('entry', this)">تسجيل</div>
                 <div class="tab" onclick="showSection('report', this)">تقارير</div>
