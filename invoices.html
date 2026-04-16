@@ -265,9 +265,13 @@
         const urgentLabel = urgentSel.options[urgentSel.selectedIndex].getAttribute('data-label');
         const urgentVal = parseInt(urgentSel.value);
         
+        // تعديل منطق جلب السعر لضمان عدم حدوث خطأ NaN
+        let washPrice = parseFloat(opt.dataset.wash) || 0;
+        let ironPrice = parseFloat(opt.dataset.iron) || 0;
+
         let unitPrice = (opt.getAttribute('data-manual') === "true") ? 
             (parseFloat(document.getElementById('customPrice').value) || 0) : 
-            (mode === 'غسيل وكوي' ? parseFloat(opt.dataset.wash) : parseFloat(opt.dataset.iron));
+            (mode === 'غسيل وكوي' ? washPrice : ironPrice);
         
         const override = parseFloat(document.getElementById('overridePrice').value);
         if (!isNaN(override) && override > 0) unitPrice = override;
