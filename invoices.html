@@ -15,7 +15,6 @@
         .login-card { background: rgba(255, 255, 255, 0.9); padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 350px; text-align: center; position: relative; }
         .login-card input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 1.8rem; text-align: center; outline: none; letter-spacing: 5px; }
         
-        /* زر العودة في صفحة الدخول */
         .back-to-home { position: absolute; top: 15px; right: 15px; color: var(--primary); font-size: 1.2rem; text-decoration: none; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
         .main-container { width: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 0; height: 100vh; }
@@ -74,7 +73,6 @@
 <div id="loginOverlay" class="no-print">
     <div class="login-card">
         <a href="index.html" class="back-to-home"><i class="fa-solid fa-arrow-right"></i></a>
-        
         <h2 style="color:var(--primary)">الخدمة المميزة 🧺</h2>
         <p>أدخل الرقم السري للدخول</p>
         <input type="password" id="mainPassInput" placeholder="••••" maxlength="4" inputmode="numeric">
@@ -141,9 +139,9 @@
                     <option value="سجاد 2م | Carpet 2m" data-wash="1.000" data-iron="0.000">سجاد 2م | Carpet 2m</option>
                 </optgroup>
                 <optgroup label="يدوي | Manual">
-                    <option value="فستان | Dress" data-manual="true">فستان | Dress (يدوي)</option>
-                    <option value="بدلة رسمية | Suit" data-manual="true">بدلة رسمية | Suit (يدوي)</option>
-                    <option value="شنطة | Bag" data-manual="true">شنطة | Bag (يدوي)</option>
+                    <option value="فستان | Dress" data-manual="true" data-wash="0.000" data-iron="0.000">فستان | Dress (يدوي)</option>
+                    <option value="بدلة رسمية | Suit" data-manual="true" data-wash="0.000" data-iron="0.000">بدلة رسمية | Suit (يدوي)</option>
+                    <option value="شنطة | Bag" data-manual="true" data-wash="0.000" data-iron="0.000">شنطة | Bag (يدوي)</option>
                     <option value="حذاء | Shoes" data-wash="2.000" data-iron="0.000">حذاء | Shoes</option>
                     <option value="قبعة | Cap" data-wash="0.200" data-iron="0.000">قبعة | Cap</option>
                 </optgroup>
@@ -268,7 +266,7 @@
         const urgentVal = parseInt(urgentSel.value);
         
         let unitPrice = (opt.getAttribute('data-manual') === "true") ? 
-            parseFloat(document.getElementById('customPrice').value) : 
+            (parseFloat(document.getElementById('customPrice').value) || 0) : 
             (mode === 'غسيل وكوي' ? parseFloat(opt.dataset.wash) : parseFloat(opt.dataset.iron));
         
         const override = parseFloat(document.getElementById('overridePrice').value);
@@ -356,7 +354,7 @@
             total: document.getElementById('finalTotal').innerText,
             items: formattedItems,
             discount: currentDiscount.toFixed(3),
-            k: isMonthly ? phoneInput : "" // يرسل الهاتف فقط إذا تم تحديد المربع
+            k: isMonthly ? phoneInput : ""
         };
         try {
             const response = await fetch(WEBHOOK_URL_SAVE, { 
