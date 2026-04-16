@@ -265,7 +265,6 @@
         const urgentLabel = urgentSel.options[urgentSel.selectedIndex].getAttribute('data-label');
         const urgentVal = parseInt(urgentSel.value);
         
-        // تعديل منطق جلب السعر لضمان عدم حدوث خطأ NaN
         let washPrice = parseFloat(opt.dataset.wash) || 0;
         let ironPrice = parseFloat(opt.dataset.iron) || 0;
 
