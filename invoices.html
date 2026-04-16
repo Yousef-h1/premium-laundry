@@ -265,9 +265,9 @@
         const urgentLabel = urgentSel.options[urgentSel.selectedIndex].getAttribute('data-label');
         const urgentVal = parseInt(urgentSel.value);
         
-        // جلب الأسعار الأساسية من خصائص البيانات
-        let washPrice = parseFloat(opt.dataset.wash) || 0;
-        let ironPrice = parseFloat(opt.dataset.iron) || 0;
+        // جلب الأسعار الأساسية من خصائص البيانات وضمان تحويلها لأرقام
+        let washPrice = Number(opt.dataset.wash) || 0;
+        let ironPrice = Number(opt.dataset.iron) || 0;
 
         // تحديد السعر الأساسي بناءً على الخدمة (يدوي أو مثبت)
         let unitPrice = (opt.getAttribute('data-manual') === "true") ? 
@@ -278,6 +278,10 @@
         const override = parseFloat(document.getElementById('overridePrice').value);
         if (!isNaN(override) && override > 0) {
             unitPrice = override;
+        }
+
+        if (unitPrice <= 0 && opt.getAttribute('data-manual') === "true") {
+            return alert("الرجاء إدخال سعر صحيح للخدمة اليدوية");
         }
 
         items.push({ 
@@ -320,7 +324,7 @@
             row.innerHTML = `
                 <div class="item-main-info">
                     <span>${i.name}</span>
-                    <span>${i.price.toFixed(3)}</span>
+                    <span>${Number(i.price).toFixed(3)}</span>
                 </div>
                 <div class="item-sub-info">
                     <span>الكمية: ${i.qty} | ${i.mode}</span>
