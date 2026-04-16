@@ -265,15 +265,20 @@
         const urgentLabel = urgentSel.options[urgentSel.selectedIndex].getAttribute('data-label');
         const urgentVal = parseInt(urgentSel.value);
         
+        // جلب الأسعار الأساسية من خصائص البيانات
         let washPrice = parseFloat(opt.dataset.wash) || 0;
         let ironPrice = parseFloat(opt.dataset.iron) || 0;
 
+        // تحديد السعر الأساسي بناءً على الخدمة (يدوي أو مثبت)
         let unitPrice = (opt.getAttribute('data-manual') === "true") ? 
             (parseFloat(document.getElementById('customPrice').value) || 0) : 
             (mode === 'غسيل وكوي' ? washPrice : ironPrice);
         
+        // التحقق من "تعديل السعر": إذا وُجد رقم، يتم اعتماده فوراً وإلغاء ما قبله
         const override = parseFloat(document.getElementById('overridePrice').value);
-        if (!isNaN(override) && override > 0) unitPrice = override;
+        if (!isNaN(override) && override > 0) {
+            unitPrice = override;
+        }
 
         items.push({ 
             id: Date.now(), 
@@ -285,6 +290,7 @@
         });
         
         renderBill();
+        // تفريغ الحقول بعد الإضافة لضمان الدقة في الطلب التالي
         document.getElementById('overridePrice').value = "";
         document.getElementById('customPrice').value = "";
         
