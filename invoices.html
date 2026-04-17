@@ -183,8 +183,7 @@
         if (document.getElementById('mainPassInput').value === APP_PASS) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('mainApp').style.display = 'flex';
-            const invDisplay = document.getElementById('invNum');
-            if (invDisplay.innerText === "---") { await fetchNextInvoiceID(); }
+            await fetchNextInvoiceID();
         } else { alert("خطأ في الرقم السري!"); }
     }
 
@@ -208,7 +207,8 @@
                 if (res["الخدمات"]) {
                     const servicesList = cleanData(res["الخدمات"]).split('\n');
                     const billBody = document.getElementById('billBody');
-                    billBody.innerHTML = `<p style="font-size:0.8rem; color:var(--primary)">فاتورة سابقة: ${res["رقم الفاتورة"]}</p>`;
+                    // التعديل هنا لدعم مسمى العمود الجديد "رَقَم الفاتورة"
+                    billBody.innerHTML = `<p style="font-size:0.8rem; color:var(--primary)">فاتورة سابقة: ${res["رقم الفاتورة"] || res["رقم الفاتوره"] || res["رَقَم الفاتورة"]}</p>`;
                     servicesList.forEach(srv => {
                         if(srv.trim()) billBody.innerHTML += `<div class="bill-item-row"><div class="item-main-info"><span>${srv}</span></div></div>`;
                     });
@@ -266,6 +266,7 @@
         const btn = document.getElementById('printBtn');
         btn.disabled = true;
         btn.innerText = "جاري الحفظ...";
+        // التعديل هنا لضمان إرسال البيانات بشكل صحيح للمسمى الجديد
         const payload = { action: 'save', "رقم الفاتورة": document.getElementById('invNum').innerText, "الاسم": name, "الهاتف": phone, "الاجمالي": document.getElementById('finalTotal').innerText, "الخدمات": items.map(i => `${i.name} (x${i.qty})`).join(', '), "التاريخ": new Date().toLocaleDateString('en-GB'), "الدفع الشهري": document.getElementById('monthlyPayCheck').checked ? "نعم" : "لا" };
         try {
             const response = await fetch(WEBHOOK_URL_MAIN, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
