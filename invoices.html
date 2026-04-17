@@ -183,7 +183,8 @@
         if (document.getElementById('mainPassInput').value === APP_PASS) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('mainApp').style.display = 'flex';
-            await fetchNextInvoiceID();
+            const invDisplay = document.getElementById('invNum');
+            if (invDisplay.innerText === "---") { await fetchNextInvoiceID(); }
         } else { alert("خطأ في الرقم السري!"); }
     }
 
