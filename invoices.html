@@ -1,51 +1,310 @@
-async function startSearch() {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) return;
-    document.getElementById('searchInput').style.backgroundColor = "#fff9db"; 
-    try {
-        const response = await fetch(WEBHOOK_URL_MAIN, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "search", searchQuery: query, invoiceId: query })
-        });
-        const data = await response.json();
-        let res = Array.isArray(data) ? data[0] : data;
-        if (res && res.json) res = res.json;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مغسلة الخدمة المميزة - POS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #2563eb; --danger: #ef4444; --success: #10b981; --bg: #f8fafc; --warning: #f59e0b; --dark: #1e293b; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; background-color: var(--bg); width: 100%; }
+        body { font-family: 'Tajawal', sans-serif; display: flex; flex-direction: column; }
+        #loginOverlay { position: fixed; inset: 0; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; z-index: 999999; padding: 20px; }
+        .login-card { background: white; padding: 35px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 100%; max-width: 380px; text-align: center; }
+        .login-card input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 2rem; text-align: center; outline: none; letter-spacing: 8px; }
+        .main-container { width: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 0; height: 100vh; }
+        #mainApp { display: none; width: 100%; height: 100%; }
+        .input-panel { background: #fff; padding: 25px; border-left: 1px solid #e2e8f0; overflow-y: auto; }
+        .invoice-preview { background: #fff; padding: 30px; overflow-y: auto; border-right: 4px solid #f1f5f9; position: relative; }
+        @media (max-width: 900px) { .main-container { display: flex; flex-direction: column; height: auto; } .input-panel, .invoice-preview { height: auto; width: 100%; border: none; padding: 20px; } }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.9rem; color: #475569; }
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 1rem; transition: 0.2s; }
+        .service-options { display: flex; gap: 10px; background: #f1f5f9; padding: 6px; border-radius: 14px; }
+        .option-item { flex: 1; position: relative; cursor: pointer; }
+        .option-item input { position: absolute; opacity: 0; }
+        .option-item span { display: block; padding: 12px; text-align: center; border-radius: 10px; font-weight: bold; color: #64748b; }
+        .option-item input:checked + span { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 18px; border-radius: 14px; width: 100%; cursor: pointer; font-weight: 900; font-size: 1.1rem; }
+        .btn-print { background: var(--success); color: white; border: none; padding: 20px; border-radius: 18px; width: 100%; font-size: 1.3rem; font-weight: 900; cursor: pointer; margin-top: 25px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
+        .total-box { margin-top: 20px; padding: 20px; background: var(--dark); color: #fff; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; }
+        .bill-item-row { border-bottom: 1px solid #f1f5f9; padding: 15px 0; display: flex; flex-direction: column; }
+        .item-main-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; color: #1e293b; }
+        .item-sub-info { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-top: 8px; border-top: 1px dashed #eee; padding-top: 5px; }
+        .remove-btn { color: var(--danger); background: #fef2f2; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; align-self: flex-start; }
+        .discount-section { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 15px; display: flex; align-items: center; gap: 10px; }
+        @media print { .no-print { display: none !important; } .main-container { display: block; } .invoice-preview { width: 100%; border: none; } }
+        /* ستايل زر البحث الجديد */
+        .search-container { display: flex; gap: 8px; align-items: center; }
+        .btn-search { background: var(--warning); color: white; border: none; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-        if (res && (res["الاسم"] || res["الهاتف"])) {
-            // تنظيف وجلب البيانات الأساسية
-            document.getElementById('custName').value = cleanData(res["الاسم"]);
-            document.getElementById('custPhone').value = cleanData(res["الهاتف"]);
-            
-            // تحديث السعر النهائي في الواجهة
-            if (res["الاجمالي"]) {
-                document.getElementById('finalTotal').innerText = cleanData(res["الاجمالي"]);
-            }
+<div id="loginOverlay" class="no-print">
+    <div class="login-card">
+        <h2 style="color:var(--primary); margin-bottom: 5px;">الخدمة المميزة 🧺</h2>
+        <input type="password" id="mainPassInput" placeholder="••••" maxlength="4" inputmode="numeric">
+        <button class="btn-add" onclick="handleAppLogin()">دخول النظام</button>
+    </div>
+</div>
 
-            // جلب وتنظيف الخدمات
-            if (res["الخدمات"]) {
-                const rawServices = cleanData(res["الخدمات"]);
-                const servicesList = rawServices.split(/,|\n/); // تقسيم بالفاصلة أو السطر الجديد
-                const billBody = document.getElementById('billBody');
-                billBody.innerHTML = `<div style="padding:10px; color:var(--primary); font-weight:bold; border-bottom:1px solid #eee;">فاتورة سابقة: ${res["رقم الفاتورة"]}</div>`;
-                
-                servicesList.forEach(srv => {
-                    if(srv.trim()) {
-                        billBody.innerHTML += `
-                            <div class="bill-item-row">
-                                <div class="item-main-info"><span>${srv.trim()}</span></div>
-                            </div>`;
-                    }
-                });
-            }
-            document.getElementById('searchInput').style.backgroundColor = "#e8f5e9";
-            document.getElementById('searchInput').value = "";
-        } else { 
-            alert("⚠️ لم يتم العثور على بيانات"); 
-            document.getElementById('searchInput').style.backgroundColor = ""; 
-        }
-    } catch (err) { 
-        console.error("Search Error:", err); 
-        alert("⚠️ خطأ في الاتصال بالخادم");
+<div class="main-container" id="mainApp">
+    <div class="input-panel no-print">
+        <div style="background:var(--primary); padding:15px; border-radius:15px; color:white; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <span>حالة النظام: متصل 🟢</span>
+        </div>
+        <div class="search-box" style="background:#f1f5f9; padding:15px; border-radius:15px; margin-bottom:20px;">
+            <label>🔍 بحث سريع (رقم هاتف أو فاتورة)</label>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="أدخل الرقم..." onkeypress="if(event.key==='Enter') startSearch()" inputmode="numeric">
+                <button class="btn-search" onclick="startSearch()"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+        <h4 style="margin:0 0 12px; color:var(--primary)">بيانات العميل</h4>
+        <div class="form-group"><input type="text" id="custName" placeholder="اسم العميل"></div>
+        <div class="form-group"><input type="tel" id="custPhone" placeholder="رقم الهاتف"></div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: #fff; padding: 10px; border-radius: 12px; border: 1.5px solid #e2e8f0;">
+            <input type="checkbox" id="monthlyPayCheck" style="width:22px; height:22px;">
+            <label for="monthlyPayCheck" style="margin:0; font-size:1rem; cursor:pointer;">إضافة لقائمة الدفع الشهري</label>
+        </div>
+        <h4 style="margin:20px 0 10px; color:var(--primary)">الخدمات Services</h4>
+        <div class="form-group">
+            <select id="itemType" onchange="togglePriceInput()">
+                <optgroup label="عامة | General">
+                    <option value="عباية بالبخار | Abaya Steam" data-wash="1.000" data-iron="0.500">عباية بالبخار | Abaya Steam</option>
+                    <option value="شيلة - حجاب | Hijab" data-wash="0.200" data-iron="0.200">شيلة - حجاب | Hijab</option>
+                    <option value="غترة | Ghutra" data-wash="0.400" data-iron="0.200">غترة | Ghutra</option>
+                    <option value="بشت | Bisht" data-wash="1.000" data-iron="0.500">بشت | Bisht</option>
+                    <option value="جاكيت (بخار) | Jacket Steam" data-wash="0.800" data-iron="0.000">جاكيت (بخار) | Jacket Steam</option>
+                    <option value="فوطة استحمام | Towel" data-wash="0.600" data-iron="0.000">فوطة استحمام | Towel</option>
+                </optgroup>
+                <optgroup label="رجالي | Gents">
+                    <option value="ثوب | Thobe" data-wash="0.500" data-iron="0.150">ثوب | Thobe</option>
+                    <option value="ثوب بالبخار | Thobe Steam" data-wash="0.600" data-iron="0.200">ثوب بالبخار | Thobe Steam</option>
+                    <option value="بنطلون طويل | Trouser" data-wash="0.600" data-iron="0.300">بنطلون طويل | Trouser</option>
+                    <option value="بنطلون قصير | Short" data-wash="0.400" data-iron="0.200">بنطلون قصير | Short</option>
+                    <option value="بدلة عسكرية | Uniform" data-wash="1.000" data-iron="0.400">بدلة عسكرية | Uniform</option>
+                    <option value="فانيلة | T-Shirt" data-wash="0.400" data-iron="0.200">فانيلة | T-Shirt</option>
+                    <option value="فانيلة داخلية | Underwear Shirt" data-wash="0.200" data-iron="0.000">فانيلة داخلية | Underwear Shirt</option>
+                    <option value="كلسون | Underwear" data-wash="0.200" data-iron="0.000">كلسون | Underwear</option>
+                    <option value="جوارب | Socks" data-wash="0.100" data-iron="0.000">جوارب | Socks</option>
+                </optgroup>
+                <optgroup label="نسائي | Ladies">
+                    <option value="قميص بيت نسائي | Ladies House Shirt" data-wash="0.600" data-iron="0.400">قميص بيت نسائي | Ladies House Shirt</option>
+                    <option value="تنورة | Skirt" data-wash="0.600" data-iron="0.300">تنورة | Skirt</option>
+                </optgroup>
+                <optgroup label="مفروشات | Bedding">
+                    <option value="غطاء سرير فردي | Single Bed Cover" data-wash="0.500" data-iron="0.000">غطاء سرير فردي | Single Bed Cover</option>
+                    <option value="غطاء سرير مزدوج | Double Bed Cover" data-wash="0.800" data-iron="0.000">غطاء سرير مزدوج | Double Bed Cover</option>
+                    <option value="بطانية كبيرة | Large Blanket" data-wash="2.000" data-iron="0.000">بطانية كبيرة | Large Blanket</option>
+                    <option value="بطانية صغيرة | Small Blanket" data-wash="1.500" data-iron="0.000">بطانية صغيرة | Small Blanket</option>
+                    <option value="غطاء مخدة | Pillow Cover" data-wash="0.200" data-iron="0.000">غطاء مخدة | Pillow Cover</option>
+                    <option value="ستارة 2م | Curtain 2m" data-wash="1.000" data-iron="0.000">ستارة 2م | Curtain 2m</option>
+                    <option value="سجاد 2م | Carpet 2m" data-wash="1.000" data-iron="0.000">سجاد 2م | Carpet 2m</option>
+                </optgroup>
+                <optgroup label="يدوي | Manual">
+                    <option value="فستان | Dress" data-manual="true">فستان | Dress (يدوي)</option>
+                    <option value="بدلة رسمية | Suit" data-manual="true">بدلة رسمية | Suit (يدوي)</option>
+                    <option value="شنطة | Bag" data-manual="true">شنطة | Bag (يدوي)</option>
+                    <option value="حذاء | Shoes" data-wash="2.000" data-iron="0.000">حذاء | Shoes</option>
+                    <option value="قبعة | Cap" data-wash="0.200" data-iron="0.000">قبعة | Cap</option>
+                </optgroup>
+            </select>
+        </div>
+        <div id="customPriceContainer" class="form-group" style="display:none; background:#fff9db; padding:12px; border-radius:12px; border:1px solid #fab005;">
+            <label>السعر اليدوي (BHD)</label>
+            <input type="number" id="customPrice" step="0.100" placeholder="0.000">
+        </div>
+        <div id="overridePriceContainer" class="form-group">
+            <label>تعديل السعر الحالي</label>
+            <input type="number" id="overridePrice" step="0.100" placeholder="0.000">
+        </div>
+        <div class="service-options">
+            <label class="option-item"><input type="radio" name="serviceMode" value="غسيل وكوي" checked><span>غسيل وكوي</span></label>
+            <label class="option-item"><input type="radio" name="serviceMode" value="كوي فقط"><span>كوي فقط</span></label>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+            <div><label>الكمية</label><input type="number" id="qty" value="1" min="1"></div>
+            <div><label>الاستعجال</label>
+                <select id="urgentType">
+                    <option value="1">عادي</option>
+                    <option value="2">مستعجل (X2)</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-add" style="margin-top:25px" onclick="addItem()">إضافة للطلب <i class="fas fa-plus-circle"></i></button>
+    </div>
+    <div class="invoice-preview" id="invoice">
+        <div style="text-align: center; border-bottom: 3px solid var(--dark); padding-bottom: 15px; margin-bottom: 15px;">
+            <h2 style="margin: 0; color: var(--dark);">مغسلة الخدمة المميزة</h2>
+            <p style="font-size: 0.9rem; margin: 5px 0; color: #64748b; font-weight: bold;">PREMIUM SERVICE LAUNDRY</p>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #cbd5e1; font-size: 0.95rem;">
+            <div>رقم الفاتورة: <span id="invNum" style="font-weight: 900; color: var(--primary);">---</span></div>
+            <div id="dateNow" style="color: var(--dark); font-weight: bold;"></div>
+        </div>
+        <div id="billBody" style="min-height: 200px;"></div>
+        <div id="discountDisplayRow" style="display: none; justify-content: space-between; padding: 10px; color: var(--danger); font-weight: bold; border-top: 1px solid #eee;">
+            <span>الخصم:</span>
+            <span id="appliedDiscountVal">0.000 BHD</span>
+        </div>
+        <div class="total-box">
+            <span style="font-size: 1.1rem;">الإجمالي النهائي</span>
+            <span id="finalTotal" style="font-weight:900; font-size:1.8rem">0.000 BHD</span>
+        </div>
+        <div class="discount-section no-print">
+            <input type="number" id="discountInput" step="0.100" placeholder="قيمة الخصم BHD" style="flex: 1; margin: 0;">
+            <button onclick="applyDiscount()" style="background: var(--warning); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer;">تطبيق</button>
+        </div>
+        <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد الفاتورة وإرسال واتساب <i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<script>
+    const APP_PASS = "0005";
+    const WEBHOOK_URL_MAIN = "https://n8n.awj-bh.cloud/webhook/725f1ccb-6fa7-421d-9b68-8b60322702c3";
+    let items = [];
+    let discountValue = 0;
+
+    function cleanData(val) {
+        if (!val) return "";
+        return val.toString().replace(/^=/, '').replace(/['"]/g, '').trim();
     }
-}
+
+    async function fetchNextInvoiceID() {
+        const invDisplay = document.getElementById('invNum');
+        invDisplay.innerText = "جاري الجلب...";
+        try {
+            const response = await fetch(WEBHOOK_URL_MAIN, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "get_last_id" })
+            });
+            const data = await response.json();
+            let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : data.lastID;
+            if (lastID && !isNaN(parseInt(lastID))) {
+                invDisplay.innerText = parseInt(lastID) + 1;
+                invDisplay.style.color = "var(--primary)";
+            } else { invDisplay.innerText = "20071"; }
+        } catch (err) { invDisplay.innerText = "20071"; }
+    }
+
+    async function handleAppLogin() {
+        if (document.getElementById('mainPassInput').value === APP_PASS) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+            await fetchNextInvoiceID();
+        } else { alert("⚠️ الرقم السري غير صحيح"); }
+    }
+
+    async function startSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) return;
+        document.getElementById('searchInput').style.backgroundColor = "#fff9db"; 
+        try {
+            const response = await fetch(WEBHOOK_URL_MAIN, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "search", searchQuery: query, invoiceId: query })
+            });
+            const data = await response.json();
+            let res = Array.isArray(data) ? data[0] : data;
+            if (res && res.json) res = res.json;
+            if (res && (res["الاسم"] || res["الهاتف"])) {
+                document.getElementById('custName').value = cleanData(res["الاسم"] || "");
+                document.getElementById('custPhone').value = cleanData(res["الهاتف"] || "");
+                
+                // الإصلاح: جلب السعر النهائي وعرضه
+                if (res["الاجمالي"]) {
+                    document.getElementById('finalTotal').innerText = cleanData(res["الاجمالي"]);
+                }
+
+                if (res["الخدمات"]) {
+                    const servicesList = cleanData(res["الخدمات"]).split('\n');
+                    const billBody = document.getElementById('billBody');
+                    billBody.innerHTML = `<div style="padding:10px; color:var(--primary); font-weight:bold;">فاتورة سابقة: ${res["رقم الفاتورة"]}</div>`;
+                    servicesList.forEach(srv => {
+                        if(srv.trim()) {
+                           billBody.innerHTML += `<div class="bill-item-row"><div class="item-main-info"><span>${srv.trim()}</span></div></div>`;
+                        }
+                    });
+                }
+                document.getElementById('searchInput').style.backgroundColor = "#e8f5e9";
+                document.getElementById('searchInput').value = "";
+            } else { alert("⚠️ لم يتم العثور على بيانات"); document.getElementById('searchInput').style.backgroundColor = ""; }
+        } catch (err) { console.error(err); }
+    }
+
+    function togglePriceInput() {
+        const sel = document.getElementById('itemType');
+        const isManual = sel.options[sel.selectedIndex].dataset.manual === "true";
+        document.getElementById('customPriceContainer').style.display = isManual ? 'block' : 'none';
+        document.getElementById('overridePriceContainer').style.display = isManual ? 'none' : 'block';
+    }
+
+    function addItem() {
+        const sel = document.getElementById('itemType');
+        const opt = sel.options[sel.selectedIndex];
+        const mode = document.querySelector('input[name="serviceMode"]:checked').value;
+        const qty = parseInt(document.getElementById('qty').value) || 1;
+        const urgentVal = parseInt(document.getElementById('urgentType').value);
+        let unitPrice = (opt.dataset.manual === "true") ? parseFloat(document.getElementById('customPrice').value) : (mode === 'غسيل وكوي' ? parseFloat(opt.dataset.wash) : parseFloat(opt.dataset.iron));
+        const override = parseFloat(document.getElementById('overridePrice').value);
+        if (!isNaN(override) && override > 0) unitPrice = override;
+        if (isNaN(unitPrice) || unitPrice <= 0) return alert("يرجى تحديد السعر");
+        items.push({ id: Date.now(), name: opt.value, qty: qty, mode: mode, urgency: urgentVal > 1 ? "مستعجل" : "عادي", price: (unitPrice * qty * urgentVal) });
+        renderBill();
+        document.getElementById('overridePrice').value = "";
+        document.getElementById('customPrice').value = "";
+    }
+
+    function applyDiscount() {
+        discountValue = parseFloat(document.getElementById('discountInput').value) || 0;
+        renderBill();
+    }
+
+    function renderBill() {
+        const container = document.getElementById('billBody');
+        container.innerHTML = "";
+        let subTotal = 0;
+        items.forEach(i => {
+            subTotal += i.price;
+            container.innerHTML += `<div class="bill-item-row">
+                <div class="item-main-info"><span>${i.name}</span><span>${i.price.toFixed(3)}</span></div>
+                <div class="item-sub-info"><span>الكمية: ${i.qty} | ${i.mode}</span><span>${i.urgency}</span></div>
+                <button class="remove-btn no-print" onclick="removeItem(${i.id})">حذف</button>
+            </div>`;
+        });
+        const netTotal = Math.max(0, subTotal - discountValue);
+        document.getElementById('finalTotal').innerText = netTotal.toFixed(3) + " BHD";
+    }
+
+    function removeItem(id) { items = items.filter(x => x.id !== id); renderBill(); }
+
+    async function processAndPrint() {
+        const name = document.getElementById('custName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
+        if (!name || !phone || items.length === 0) return alert("⚠️ أكمل البيانات");
+        const btn = document.getElementById('printBtn');
+        btn.disabled = true;
+        btn.innerText = "جاري الحفظ...";
+        const payload = { 
+            action: 'save', 
+            "رقم الفاتورة": document.getElementById('invNum').innerText, 
+            "الاسم": name, "الهاتف": phone, 
+            "الاجمالي": document.getElementById('finalTotal').innerText, 
+            "الخدمات": items.map(i => `${i.name} (x${i.qty})`).join(', '), 
+            "التاريخ": new Date().toLocaleDateString('en-GB'),
+            "الدفع الشهري": document.getElementById('monthlyPayCheck').checked ? "نعم" : "لا"
+        };
+        try {
+            const response = await fetch(WEBHOOK_URL_MAIN, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            if (response.ok) { alert("✅ تم الحفظ بنجاح"); location.reload(); }
+        } catch (e) { alert("⚠️ خطأ في الاتصال"); btn.disabled = false; }
+    }
+    document.getElementById('dateNow').innerText = new Date().toLocaleDateString('en-GB');
+</script>
+</body>
+</html>
