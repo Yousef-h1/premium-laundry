@@ -8,54 +8,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --primary: #2563eb; --danger: #ef4444; --success: #10b981; --bg: #f8fafc; --warning: #f59e0b; --dark: #1e293b; }
-        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; background-color: var(--bg); width: 100%; }
-        body { font-family: 'Tajawal', sans-serif; display: flex; flex-direction: column; }
+        html, body { height: 100%; margin: 0; padding: 0; background-color: var(--bg); width: 100%; }
+        body { font-family: 'Tajawal', sans-serif; display: block; overflow-x: hidden; }
         
         #loginOverlay { position: fixed; inset: 0; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; z-index: 999999; padding: 20px; }
         .login-card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 100%; max-width: 380px; text-align: center; }
-        .login-card input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 1.8rem; text-align: center; outline: none; letter-spacing: 5px; box-sizing: border-box; }
+        .login-card input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 2rem; text-align: center; outline: none; letter-spacing: 8px; box-sizing: border-box; }
         
-        .main-container { width: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr 400px; gap: 0; height: 100vh; }
-        #mainApp { display: none; width: 100%; height: 100%; }
+        /* جعل التصميم شاشة واحدة بدون تقسيم */
+        .main-container { width: 100%; max-width: 600px; margin: 0 auto; display: block; min-height: 100vh; padding-bottom: 40px; }
+        #mainApp { display: none; }
         
-        .input-panel { background: #fff; padding: 20px; border-left: 1px solid #e2e8f0; overflow-y: auto; box-sizing: border-box; }
-        .invoice-preview { background: #fff; padding: 20px; overflow-y: auto; border-right: 4px solid #f1f5f9; position: relative; box-sizing: border-box; }
+        .input-panel { background: #fff; padding: 20px; border-bottom: 8px solid #f1f5f9; box-sizing: border-box; }
+        .invoice-preview { background: #fff; padding: 25px; position: relative; box-sizing: border-box; }
 
-        /* تعديلات الجوال الصارمة */
-        @media (max-width: 900px) {
-            .main-container { display: flex; flex-direction: column; height: auto; }
-            .input-panel, .invoice-preview { height: auto; width: 100%; border: none; padding: 15px; }
-            .invoice-preview { border-top: 8px solid #f1f5f9; margin-top: 10px; padding-bottom: 50px; }
-            input, select, .btn-add, .btn-print { font-size: 16px !important; }
-        }
-
-        .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #475569; }
-        input, select { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 1rem; transition: 0.2s; box-sizing: border-box; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.9rem; color: #475569; }
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 1rem; transition: 0.2s; box-sizing: border-box; }
         
-        .search-container { display: flex; gap: 8px; align-items: center; width: 100%; }
-        .search-container input { flex: 1; }
-        .btn-search { background: var(--warning); color: white; border: none; padding: 12px 18px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .search-container { display: flex; gap: 8px; align-items: center; }
+        .btn-search { background: var(--warning); color: white; border: none; padding: 14px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; }
 
-        .service-options { display: flex; gap: 8px; background: #f1f5f9; padding: 5px; border-radius: 12px; }
+        .service-options { display: flex; gap: 10px; background: #f1f5f9; padding: 6px; border-radius: 14px; }
         .option-item { flex: 1; position: relative; cursor: pointer; }
         .option-item input { position: absolute; opacity: 0; }
-        .option-item span { display: block; padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; color: #64748b; font-size: 0.9rem; }
+        .option-item span { display: block; padding: 12px; text-align: center; border-radius: 10px; font-weight: bold; color: #64748b; }
         .option-item input:checked + span { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
         
-        .btn-add { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; cursor: pointer; font-weight: 900; font-size: 1.1rem; margin-top: 15px; }
-        .btn-print { background: var(--success); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-size: 1.2rem; font-weight: 900; cursor: pointer; margin-top: 20px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 18px; border-radius: 14px; width: 100%; cursor: pointer; font-weight: 900; font-size: 1.1rem; }
+        .btn-print { background: var(--success); color: white; border: none; padding: 20px; border-radius: 18px; width: 100%; font-size: 1.3rem; font-weight: 900; cursor: pointer; margin-top: 25px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
         
-        .total-box { margin-top: 15px; padding: 15px; background: var(--dark); color: #fff; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .bill-item-row { border-bottom: 1px solid #f1f5f9; padding: 12px 0; display: flex; flex-direction: column; position: relative; }
-        .item-main-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; color: #1e293b; }
-        .item-sub-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: #64748b; margin-top: 5px; border-top: 1px dashed #eee; padding-top: 5px; }
-        .remove-btn { color: var(--danger); background: #fef2f2; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; margin-top: 8px; align-self: flex-start; }
+        .total-box { margin-top: 20px; padding: 20px; background: var(--dark); color: #fff; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; }
+        .bill-item-row { border-bottom: 1px solid #f1f5f9; padding: 15px 0; display: flex; flex-direction: column; }
+        .item-main-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; color: #1e293b; }
+        .item-sub-info { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-top: 8px; border-top: 1px dashed #eee; padding-top: 5px; }
+        .remove-btn { color: var(--danger); background: #fef2f2; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; align-self: flex-start; }
         
-        .discount-section { background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 15px; display: flex; align-items: center; gap: 8px; }
-        .discount-section input { flex: 1; padding: 10px; }
-        
-        @media print { .no-print { display: none !important; } .main-container { display: block; } .invoice-preview { width: 100%; border: none; } }
+        .discount-section { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 15px; display: flex; align-items: center; gap: 10px; }
+        @media print { .no-print { display: none !important; } .main-container { display: block; max-width: 100%; } .invoice-preview { border: none; } .input-panel { display: none; } }
     </style>
 </head>
 <body>
@@ -70,28 +60,25 @@
 
 <div class="main-container" id="mainApp">
     <div class="input-panel no-print">
-        <div style="background:var(--primary); padding:12px; border-radius:12px; color:white; margin-bottom:15px; text-align:center; font-weight:bold;">
-            متصل بنظام n8n 🟢
+        <div style="background:var(--primary); padding:15px; border-radius:15px; color:white; margin-bottom:20px; text-align:center; font-weight:bold;">
+            حالة النظام: متصل 🟢
         </div>
-
-        <div class="search-box" style="background:#f1f5f9; padding:12px; border-radius:15px; margin-bottom:15px;">
-            <label>🔍 بحث (رقم هاتف أو فاتورة)</label>
+        <div class="search-box" style="background:#f1f5f9; padding:15px; border-radius:15px; margin-bottom:20px;">
+            <label>🔍 بحث سريع (رقم هاتف أو فاتورة)</label>
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="أدخل الرقم..." onkeypress="if(event.key==='Enter') startSearch()" inputmode="numeric">
                 <button class="btn-search" onclick="startSearch()"><i class="fas fa-search"></i></button>
             </div>
         </div>
-
-        <h4 style="margin:0 0 10px; color:var(--primary)">بيانات العميل</h4>
+        <h4 style="margin:0 0 12px; color:var(--primary)">بيانات العميل</h4>
         <div class="form-group"><input type="text" id="custName" placeholder="اسم العميل"></div>
         <div class="form-group"><input type="tel" id="custPhone" placeholder="رقم الهاتف"></div>
-        
         <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: #fff; padding: 10px; border-radius: 12px; border: 1.5px solid #e2e8f0;">
-            <input type="checkbox" id="monthlyPayCheck" style="width:20px; height:20px;">
-            <label for="monthlyPayCheck" style="margin:0; font-size:0.9rem; cursor:pointer;">دفع شهري</label>
+            <input type="checkbox" id="monthlyPayCheck" style="width:22px; height:22px;">
+            <label for="monthlyPayCheck" style="margin:0; font-size:1rem; cursor:pointer;">إضافة لقائمة الدفع الشهري</label>
         </div>
-
-        <h4 style="margin:15px 0 10px; color:var(--primary)">الخدمات Services</h4>
+        
+        <h4 style="margin:20px 0 10px; color:var(--primary)">الخدمات Services</h4>
         <div class="form-group">
             <select id="itemType" onchange="togglePriceInput()">
                 <optgroup label="عامة | General">
@@ -100,85 +87,63 @@
                     <option value="غترة | Ghutra" data-wash="0.400" data-iron="0.200">غترة</option>
                     <option value="بشت | Bisht" data-wash="1.000" data-iron="0.500">بشت</option>
                     <option value="جاكيت (بخار) | Jacket Steam" data-wash="0.800" data-iron="0.000">جاكيت بخار</option>
-                    <option value="فوطة استحمام | Towel" data-wash="0.600" data-iron="0.000">فوطة استحمام</option>
                 </optgroup>
                 <optgroup label="رجالي | Gents">
                     <option value="ثوب | Thobe" data-wash="0.500" data-iron="0.150">ثوب</option>
-                    <option value="ثوب بالبخار | Thobe Steam" data-wash="0.600" data-iron="0.200">ثوب بالبخار</option>
                     <option value="بنطلون طويل | Trouser" data-wash="0.600" data-iron="0.300">بنطلون طويل</option>
-                    <option value="بنطلون قصير | Short" data-wash="0.400" data-iron="0.200">بنطلون قصير</option>
-                    <option value="فانيلة | T-Shirt" data-wash="0.400" data-iron="0.200">فانيلة T-Shirt</option>
-                </optgroup>
-                <optgroup label="مفروشات | Bedding">
-                    <option value="غطاء سرير مزدوج | Double Bed Cover" data-wash="0.800" data-iron="0.000">كفر سرير مزدوج</option>
-                    <option value="بطانية كبيرة | Large Blanket" data-wash="2.000" data-iron="0.000">بطانية كبيرة</option>
-                    <option value="سجاد 2م | Carpet 2m" data-wash="1.000" data-iron="0.000">سجاد 2م</option>
                 </optgroup>
                 <optgroup label="يدوي | Manual">
                     <option value="فستان | Dress" data-manual="true">فستان (يدوي)</option>
-                    <option value="بدلة رسمية | Suit" data-manual="true">بدلة (يدوية)</option>
-                    <option value="حذاء | Shoes" data-wash="2.000" data-iron="0.000">حذاء</option>
                 </optgroup>
             </select>
         </div>
-
-        <div id="customPriceContainer" class="form-group" style="display:none; background:#fff9db; padding:10px; border-radius:12px; border:1px solid #fab005;">
+        <div id="customPriceContainer" class="form-group" style="display:none; background:#fff9db; padding:12px; border-radius:12px; border:1px solid #fab005;">
             <label>السعر اليدوي (BHD)</label>
             <input type="number" id="customPrice" step="0.100" placeholder="0.000">
         </div>
-
         <div id="overridePriceContainer" class="form-group">
-            <label>تعديل السعر</label>
+            <label>تعديل السعر الحالي</label>
             <input type="number" id="overridePrice" step="0.100" placeholder="0.000">
         </div>
-
         <div class="service-options">
             <label class="option-item"><input type="radio" name="serviceMode" value="غسيل وكوي" checked><span>غسيل وكوي</span></label>
             <label class="option-item"><input type="radio" name="serviceMode" value="كوي فقط"><span>كوي فقط</span></label>
         </div>
-
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
             <div><label>الكمية</label><input type="number" id="qty" value="1" min="1"></div>
             <div><label>الاستعجال</label>
                 <select id="urgentType">
                     <option value="1">عادي</option>
-                    <option value="2">مستعجل X2</option>
+                    <option value="2">مستعجل (X2)</option>
                 </select>
             </div>
         </div>
-
         <button class="btn-add" onclick="addItem()">إضافة للطلب <i class="fas fa-plus-circle"></i></button>
     </div>
 
     <div class="invoice-preview" id="invoice">
-        <div style="text-align: center; border-bottom: 2px solid var(--dark); padding-bottom: 10px; margin-bottom: 10px;">
-            <h3 style="margin: 0; color: var(--dark);">مغسلة الخدمة المميزة</h3>
-            <p style="font-size: 0.8rem; margin: 3px 0; color: #64748b; font-weight: bold;">PREMIUM SERVICE LAUNDRY</p>
+        <div style="text-align: center; border-bottom: 3px solid var(--dark); padding-bottom: 15px; margin-bottom: 15px;">
+            <h2 style="margin: 0; color: var(--dark);">مغسلة الخدمة المميزة</h2>
+            <p style="font-size: 0.9rem; margin: 5px 0; color: #64748b; font-weight: bold;">PREMIUM SERVICE LAUNDRY</p>
         </div>
-        
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #cbd5e1; font-size: 0.85rem;">
-            <div>الفاتورة: <span id="invNum" style="font-weight: 900; color: var(--primary);">---</span></div>
-            <div id="dateNow" style="font-weight: bold;"></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #cbd5e1; font-size: 0.95rem;">
+            <div>رقم الفاتورة: <span id="invNum" style="font-weight: 900; color: var(--primary);">---</span></div>
+            <div id="dateNow" style="color: var(--dark); font-weight: bold;"></div>
         </div>
-
         <div id="billBody" style="min-height: 150px;"></div>
-
-        <div id="discountDisplayRow" style="display: none; justify-content: space-between; padding: 8px; color: var(--danger); font-weight: bold; font-size: 0.9rem;">
+        <div id="discountDisplayRow" style="display: none; justify-content: space-between; padding: 10px; color: var(--danger); font-weight: bold; border-top: 1px solid #eee;">
             <span>الخصم:</span>
             <span id="appliedDiscountVal">0.000 BHD</span>
         </div>
-
         <div class="total-box">
-            <span style="font-size: 1rem;">الإجمالي النهائي</span>
-            <span id="finalTotal" style="font-weight:900; font-size:1.5rem">0.000 BHD</span>
+            <span style="font-size: 1.1rem;">الإجمالي النهائي</span>
+            <span id="finalTotal" style="font-weight:900; font-size:1.8rem">0.000 BHD</span>
         </div>
-
         <div class="discount-section no-print">
-            <input type="number" id="discountInput" step="0.100" placeholder="خصم">
-            <button onclick="applyDiscount()" style="background: var(--warning); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer;">تطبيق</button>
+            <input type="number" id="discountInput" step="0.100" placeholder="قيمة الخصم BHD">
+            <button onclick="applyDiscount()" style="background: var(--warning); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer;">تطبيق</button>
         </div>
-
-        <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد وإرسال <i class="fas fa-paper-plane"></i></button>
+        <button id="printBtn" class="btn-print no-print" onclick="processAndPrint()">اعتماد وإرسال واتساب <i class="fas fa-paper-plane"></i></button>
     </div>
 </div>
 
@@ -206,6 +171,7 @@
             let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : data.lastID;
             if (lastID && !isNaN(parseInt(lastID))) {
                 invDisplay.innerText = parseInt(lastID) + 1;
+                invDisplay.style.color = "var(--primary)";
             } else { invDisplay.innerText = "20071"; }
         } catch (err) { invDisplay.innerText = "20071"; }
     }
@@ -213,7 +179,7 @@
     async function handleAppLogin() {
         if (document.getElementById('mainPassInput').value === APP_PASS) {
             document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'block';
             await fetchNextInvoiceID();
         } else { alert("⚠️ الرقم السري غير صحيح"); }
     }
@@ -237,13 +203,16 @@
                 if (res["الخدمات"]) {
                     const servicesList = res["الخدمات"].split('\n');
                     const billBody = document.getElementById('billBody');
-                    billBody.innerHTML = `<div style="padding:10px; color:var(--primary); font-weight:bold; font-size:0.9rem;">فاتورة سابقة: ${res["رقم الفاتورة"]}</div>`;
+                    billBody.innerHTML = `<div style="padding:10px; color:var(--primary); font-weight:bold;">فاتورة سابقة: ${res["رقم الفاتورة"]}</div>`;
                     servicesList.forEach(srv => {
                         billBody.innerHTML += `<div class="bill-item-row"><div class="item-main-info"><span>${srv}</span></div></div>`;
                     });
                 }
                 document.getElementById('searchInput').style.backgroundColor = "#e8f5e9";
-            } else { alert("⚠️ لم يتم العثور"); document.getElementById('searchInput').style.backgroundColor = ""; }
+                document.getElementById('searchInput').value = "";
+                // التمرير التلقائي للمعاينة
+                document.getElementById('invoice').scrollIntoView({ behavior: 'smooth' });
+            } else { alert("⚠️ لم يتم العثور على بيانات"); document.getElementById('searchInput').style.backgroundColor = ""; }
         } catch (err) { console.error(err); }
     }
 
@@ -263,12 +232,13 @@
         let unitPrice = (opt.dataset.manual === "true") ? parseFloat(document.getElementById('customPrice').value) : (mode === 'غسيل وكوي' ? parseFloat(opt.dataset.wash) : parseFloat(opt.dataset.iron));
         const override = parseFloat(document.getElementById('overridePrice').value);
         if (!isNaN(override) && override > 0) unitPrice = override;
-        if (isNaN(unitPrice) || unitPrice <= 0) return alert("حدد السعر");
+        if (isNaN(unitPrice) || unitPrice <= 0) return alert("يرجى تحديد السعر");
         items.push({ id: Date.now(), name: opt.value, qty: qty, mode: mode, urgency: urgentVal > 1 ? "مستعجل" : "عادي", price: (unitPrice * qty * urgentVal) });
         renderBill();
         document.getElementById('overridePrice').value = "";
         document.getElementById('customPrice').value = "";
-        if(window.innerWidth < 900) document.getElementById('invoice').scrollIntoView({behavior: 'smooth'});
+        // التمرير التلقائي للمعاينة بعد الإضافة
+        document.getElementById('invoice').scrollIntoView({ behavior: 'smooth' });
     }
 
     function applyDiscount() {
