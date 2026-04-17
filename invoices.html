@@ -175,7 +175,7 @@
             });
             const data = await response.json();
             let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : data.lastID;
-            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) + 1 : "20071";
+            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) : "20071";
         } catch (err) { invDisplay.innerText = "20071"; }
     }
 
