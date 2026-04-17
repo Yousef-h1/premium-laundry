@@ -216,7 +216,7 @@
                 document.getElementById('custName').value = cleanData(res["الاسم"] || "");
                 document.getElementById('custPhone').value = cleanData(res["الهاتف"] || "");
                 
-                // الإصلاح: جلب السعر النهائي وعرضه
+                // الإصلاح: جلب الإجمالي (العمود F) وعرضه فوراً
                 if (res["الاجمالي"]) {
                     document.getElementById('finalTotal').innerText = cleanData(res["الاجمالي"]);
                 }
