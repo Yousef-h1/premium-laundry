@@ -34,11 +34,15 @@
         .btn-print { background: var(--success); color: white; border: none; padding: 18px; border-radius: 18px; width: 100%; font-size: 1.2rem; font-weight: 900; cursor: pointer; margin-top: 20px; }
         
         .total-box { margin-top: 15px; padding: 15px; background: var(--dark); color: #fff; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; }
-        .bill-item-row { border-bottom: 1px solid #f1f5f9; padding: 12px 0; display: flex; flex-direction: column; }
-        .item-main-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; color: #1e293b; }
-        .item-sub-info { display: flex; flex-direction: column; font-size: 0.85rem; color: #475569; margin-top: 4px; gap: 2px; }
-        .item-sub-info span { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; width: fit-content; }
-        .remove-btn { color: var(--danger); background: #fef2f2; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; margin-top: 8px; align-self: flex-start; }
+        
+        /* تنسيق الجدول الرأسي المطور للجوال */
+        .bill-item-row { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; background: #fff; }
+        .item-main-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 1rem; color: #1e293b; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
+        .item-sub-info { display: flex; flex-direction: column; font-size: 0.85rem; color: #475569; gap: 4px; }
+        .item-sub-info span { background: #f1f5f9; padding: 4px 10px; border-radius: 6px; width: fit-content; border-right: 3px solid var(--primary); }
+        .item-price-val { color: var(--primary); font-weight: 900; }
+        
+        .remove-btn { color: var(--danger); background: #fef2f2; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; font-weight: bold; }
         
         .discount-section { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 15px; display: flex; align-items: center; gap: 10px; }
         .search-container { display: flex; gap: 5px; align-items: center; }
@@ -268,14 +272,14 @@
                 <div class="bill-item-row">
                     <div class="item-main-info">
                         <span>${i.name}</span>
-                        <span>${i.price.toFixed(3)}</span>
+                        <span class="item-price-val">${i.price.toFixed(3)} BHD</span>
                     </div>
                     <div class="item-sub-info">
-                        <span>• الكمية: ${i.qty}</span>
-                        <span>• الخدمة: ${i.mode}</span>
-                        <span>• الحالة: ${i.urgency}</span>
+                        <span>الكمية: ${i.qty}</span>
+                        <span>الخدمة: ${i.mode}</span>
+                        <span>الحالة: ${i.urgency}</span>
                     </div>
-                    <button class="remove-btn no-print" onclick="removeItem(${i.id})">حذف</button>
+                    <button class="remove-btn no-print" onclick="removeItem(${i.id})">حذف الخدمة</button>
                 </div>`;
         });
         const finalAmount = Math.max(0, subTotal - discountValue);
@@ -291,14 +295,15 @@
         const btn = document.getElementById('printBtn');
         btn.disabled = true;
         btn.innerText = "جاري الحفظ...";
-        // تعديل الـ Payload ليرسل التفاصيل الجديدة لـ n8n
+        
+        // تعديل الـ Payload ليرسل السعر بجانب كل خدمة إلى n8n
         const payload = { 
             action: 'save', 
             "رقم الفاتورة": document.getElementById('invNum').innerText, 
             "الاسم": name, 
             "الهاتف": phone, 
             "الاجمالي": document.getElementById('finalTotal').innerText, 
-            "الخدمات": items.map(i => `${i.name} (x${i.qty}) [${i.mode} - ${i.urgency}]`).join(', '), 
+            "الخدمات": items.map(i => `${i.name} (x${i.qty}) - السعر: ${i.price.toFixed(3)} BHD [${i.mode} - ${i.urgency}]`).join(', '), 
             "التاريخ": new Date().toLocaleDateString('en-GB'), 
             "الدفع الشهري": document.getElementById('monthlyPayCheck').checked ? "نعم" : "لا" 
         };
