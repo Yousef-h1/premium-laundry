@@ -1,40 +1,75 @@
-<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Laundry - Invoices</title>
 
-<style>
-    /* تحسينات لشاشة الجوال */
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: sans-serif;
-    }
-    /* تحسين شكل نافذة تنبيهات الجوال */
-    .swal2-popup {
-        font-size: 0.9rem !important;
-    }
-    /* التأكد من أن الأزرار كبيرة كفاية للمس */
-    button {
-        min-height: 44px;
-        touch-action: manipulation;
-    }
-</style>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* تحسينات الواجهة لتناسب الجوال بشكل طولي */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            direction: rtl;
+        }
+
+        /* تنسيق الأزرار لتكون سهلة اللمس */
+        button {
+            min-height: 48px;
+            touch-action: manipulation;
+            cursor: pointer;
+            width: 100%;
+            background-color: #1e40af;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        button:disabled {
+            background-color: #94a3b8;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="appContent" style="display:none;">
+    </div>
 
 <script>
-    // 0. حماية الصفحة بالرقم السري (بتصميم مناسب للجوال)
+    // 0. حماية الصفحة بالرقم السري (تصميم مناسب للجوال مع ترميز صحيح)
     (function checkAccess() {
         const pin = prompt("🔒 دخول الموظفين:\nيرجى إدخال الرقم السري:");
-        if (pin !== "0005") {
+        if (pin === "0005") {
+            document.getElementById('appContent').style.display = 'block';
+        } else {
             alert("❌ الرقم السري خاطئ!");
-            window.location.href = "about:blank"; // إغلاق الصفحة
+            window.location.href = "about:blank"; 
         }
     })();
 
-    // 1. إعداد Supabase
+    // 1. إعداد Supabase (استخدام Anon Key)
     const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. إعداد قاعدة البيانات المحلية Dexie
+    // 2. إعداد قاعدة البيانات المحلية Dexie (Offline Support)
     const db = new Dexie("LaundryAppDB");
     db.version(1).stores({ 
         invoices: '++id, inv_num, customer_name, synced' 
@@ -42,6 +77,8 @@
 
     // 3. وظيفة حفظ الفاتورة (متوافقة مع شاشات اللمس)
     async function saveInvoice() {
+        const btn = document.getElementById('printBtn');
+        
         try {
             const nameEl = document.getElementById('custName');
             const phoneEl = document.getElementById('custPhone');
@@ -49,7 +86,10 @@
             const totalEl = document.getElementById('finalTotal');
             const monthlyCheck = document.getElementById('monthlyPayCheck');
 
-            if (!nameEl || !phoneEl) return;
+            if (!nameEl || !phoneEl || !invNumEl || !totalEl) {
+                console.error("عناصر الصفحة غير مكتملة");
+                return;
+            }
 
             const name = nameEl.value.trim();
             const phone = phoneEl.value.trim();
@@ -58,21 +98,20 @@
                 return alert("⚠️ يرجى كتابة اسم الزبون ورقمه");
             }
 
-            // منع الضغط المتكرر على الجوال
-            const btn = document.getElementById('printBtn');
+            // تعطيل الزر لمنع التكرار أثناء الحفظ
             if(btn) {
                 btn.disabled = true;
                 btn.innerText = "جاري الحفظ...";
             }
 
-            // معالجة المبلغ (إزالة BHD وتحويله لرقم دقيق)
+            // معالجة المبلغ (تحويل "0.600 BHD" إلى 0.600)
             const rawTotal = totalEl.innerText;
             const cleanTotal = parseFloat(rawTotal.replace(/[^\d.-]/g, '')) || 0;
 
-            // تجميع الخدمات
+            // تجميع قائمة الخدمات من متغير items
             const servicesList = (typeof items !== 'undefined' && items.length > 0) 
                 ? items.map(i => `${i.name} (${i.qty})`).join(', ') 
-                : "خدمات غسيل";
+                : "غسيل عام";
 
             const data = {
                 inv_num: invNumEl.innerText,
@@ -81,13 +120,14 @@
                 total_amount: cleanTotal,
                 services: servicesList,
                 is_monthly: (monthlyCheck && monthlyCheck.checked) ? "نعم" : "لا",
-                synced: 0
+                synced: 0,
+                created_at: new Date().toISOString()
             };
 
-            // أ. الحفظ المحلي (يضمن عدم ضياع البيانات في المناطق ضعيفة التغطية)
+            // أ. الحفظ المحلي فوراً
             await db.invoices.add(data);
 
-            // ب. المزامنة السحابية
+            // ب. المزامنة السحابية مع Supabase
             if (navigator.onLine) {
                 const { error } = await supabaseClient.from('invoices').insert([{
                     inv_num: data.inv_num,
@@ -102,20 +142,23 @@
                     await db.invoices.where("inv_num").equals(data.inv_num).modify({synced: 1});
                     alert("✅ تم الحفظ بنجاح");
                 } else {
-                    console.error(error);
-                    alert("💾 تم الحفظ محلياً (فشل الاتصال بالسحابة)");
+                    console.error("Supabase Error:", error);
+                    alert("💾 تم الحفظ في الجوال (فشلت المزامنة)");
                 }
             } else {
                 alert("📶 وضع الأوفلاين: تم الحفظ في ذاكرة الجوال");
             }
 
-            // تصفير الواجهة للطلب الجديد
-            setTimeout(() => location.reload(), 500);
+            // إعادة تحميل الصفحة للطلب التالي
+            setTimeout(() => location.reload(), 800);
 
         } catch (e) {
-            console.error(e);
-            alert("❌ خطأ في النظام");
+            console.error("Critical Error:", e);
+            alert("❌ حدث خطأ في النظام");
             if(btn) btn.disabled = false;
         }
     }
 </script>
+
+</body>
+</html>
