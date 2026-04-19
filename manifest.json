@@ -1,0 +1,18 @@
+{
+  "name": "Premium Laundry App",
+  "short_name": "Premium",
+  "description": "نظام إدارة مغسلة الخدمة المميزة - يعمل أوفلاين وسحابياً",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3003/3003987.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait"
+}
