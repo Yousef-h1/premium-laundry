@@ -2,35 +2,62 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // الإعدادات الجديدة والنهائية بناءً على بياناتك
+    // 1. إعداد Supabase
     const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
-    
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
+
+    // 2. إعداد قاعدة بيانات المحاسبة المحلية
     const db = new Dexie("AccountingAppDB");
-    db.version(1).stores({ accounting: '++id, description, synced' });
+    db.version(1).stores({ 
+        accounting: '++id, description, synced' 
+    });
 
+    // 3. وظيفة تسجيل المدخلات
     async function submitEntry() {
-        const entry = {
-            type: document.getElementById('t').value,
-            description: document.getElementById('d').value,
-            cash_amount: document.getElementById('c').value,
-            benefit_amount: document.getElementById('b').value,
-            total_amount: (parseFloat(document.getElementById('c').value || 0) + parseFloat(document.getElementById('b').value || 0)).toFixed(3),
-            synced: 0
-        };
-
         try {
+            const cash = parseFloat(document.getElementById('c').value || 0);
+            const benefit = parseFloat(document.getElementById('b').value || 0);
+            const desc = document.getElementById('d').value;
+
+            const entry = {
+                type: document.getElementById('t').value,
+                description: desc,
+                cash_amount: cash,
+                benefit_amount: benefit,
+                total_amount: (cash + benefit).toFixed(3),
+                synced: 0,
+                created_at: new Date().toISOString() // إضافة توقيت للعملية
+            };
+
+            // حفظ محلي أولاً
             await db.accounting.add(entry);
+
+            // محاولة المزامنة مع Supabase
             if (navigator.onLine) {
-                const { error } = await supabaseClient.from('accounting').insert([entry]);
-                if (!error) await db.accounting.where("description").equals(entry.description).modify({synced: 1});
+                const { error } = await supabaseClient.from('accounting').insert([{
+                    type: entry.type,
+                    description: entry.description,
+                    cash_amount: entry.cash_amount,
+                    benefit_amount: entry.benefit_amount,
+                    total_amount: entry.total_amount
+                }]);
+
+                if (!error) {
+                    await db.accounting.where("description").equals(desc).modify({synced: 1});
+                    alert("تم التسجيل والمزامنة بنجاح");
+                } else {
+                    console.error("Supabase Error:", error);
+                    alert("تم الحفظ محلياً (خطأ في المزامنة)");
+                }
+            } else {
+                alert("تم الحفظ محلياً (أوفلاين)");
             }
-            alert("تم التسجيل");
+
             document.getElementById('fForm').reset();
         } catch (e) {
-            alert("تم الحفظ محلياً");
+            console.error("Error:", e);
+            alert("حدث خطأ أثناء التسجيل");
         }
     }
 </script>
