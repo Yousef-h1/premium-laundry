@@ -2,11 +2,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // الإعدادات
-    const SUPABASE_URL = 'https://fG4MwwZOl5zmJtoy3zoPHg.supabase.co';
-    const SUPABASE_KEY = 'aocsaoveaooewncirufr';
+    // الإعدادات الجديدة والنهائية بناءً على بياناتك
+    const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
+    
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+</script>
     const db = new Dexie("LaundryAppDB");
     db.version(1).stores({ invoices: '++id, inv_num, customer_name, synced' });
 
