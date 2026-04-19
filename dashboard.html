@@ -20,8 +20,8 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; direction: rtl; }
 
-        /* شاشة التحميل المعلقة */
-        #loading { position: fixed; inset: 0; background: var(--white); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        /* شاشة التحميل */
+        #loading { position: fixed; inset: 0; background: var(--white); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -38,25 +38,22 @@
 
         .dashboard-container { padding: 20px 15px; max-width: 600px; margin: auto; }
 
-        /* كروت الإحصائيات الطولية */
-        .stat-card { background: var(--white); border-radius: 24px; padding: 22px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.02); }
+        .stat-card { background: var(--white); border-radius: 24px; padding: 22px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .stat-info h3 { font-size: 14px; color: #6b7280; margin: 0 0 6px 0; font-weight: 600; }
         .stat-info .value { font-size: 24px; font-weight: 800; color: var(--primary); }
         .stat-icon { background: #f3e8ff; padding: 14px; border-radius: 18px; font-size: 26px; }
 
-        /* الرسوم البيانية */
-        .chart-section { background: var(--white); border-radius: 28px; padding: 25px; margin-bottom: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .chart-section h4 { margin: 0 0 20px 0; font-size: 16px; border-right: 5px solid var(--accent); padding-right: 12px; color: var(--primary); }
+        .chart-section { background: var(--white); border-radius: 28px; padding: 25px; margin-bottom: 18px; }
+        .chart-section h4 { margin: 0 0 20px 0; font-size: 16px; border-right: 5px solid var(--accent); padding-right: 12px; }
 
-        /* السجل */
         .log-section { background: var(--white); border-radius: 28px; padding: 12px; margin-bottom: 40px; }
         .log-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-bottom: 1px solid #f9fafb; }
         .log-item:last-child { border: none; }
-        .log-title { font-size: 14px; font-weight: 700; color: #374151; display: block; }
+        .log-title { font-size: 14px; font-weight: 700; color: #374151; }
         .log-time { font-size: 11px; color: #9ca3af; }
         .log-amount { font-weight: 800; font-size: 15px; }
-        .rev { color: #10b981; } /* أخضر للإيراد */
-        .exp { color: #ef4444; } /* أحمر للمصروف */
+        .rev { color: #10b981; } 
+        .exp { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -98,12 +95,12 @@
 
             <div class="chart-section">
                 <h4>توزيع السيولة اليوم</h4>
-                <canvas id="expensePieChart" height="220"></canvas>
+                <div style="height: 220px;"><canvas id="expensePieChart"></canvas></div>
             </div>
 
             <div class="chart-section">
                 <h4>نشاط الفواتير</h4>
-                <canvas id="revenueBarChart" height="160"></canvas>
+                <div style="height: 160px;"><canvas id="revenueBarChart"></canvas></div>
             </div>
 
             <h4 style="margin: 20px 10px 15px 0; font-weight: 900;">آخر العمليات</h4>
@@ -112,18 +109,16 @@
     </div>
 
     <script>
-        // إعداد Supabase
         const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // وظيفة التحقق من الرمز السري
         function checkPass() {
             const val = document.getElementById('passInput').value;
             if (val === '0005') {
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
-                initDashboard(); // البدء بجلب البيانات بعد فتح القفل
+                initDashboard();
             } else { 
                 alert("❌ الرمز السري غير صحيح"); 
             }
@@ -131,102 +126,79 @@
 
         async function initDashboard() {
             try {
-                // عرض التاريخ الحالي
                 const options = { weekday: 'long', day: 'numeric', month: 'long' };
                 document.getElementById('current-date').innerText = new Date().toLocaleDateString('ar-BH', options);
 
-                // 1. جلب البيانات من Supabase
+                // جلب البيانات مع معالجة الأخطاء
                 const { data: invData, error: e1 } = await supabaseClient.from('invoices').select('*').order('created_at', { ascending: false });
                 const { data: accData, error: e2 } = await supabaseClient.from('accounting').select('*').order('created_at', { ascending: false });
 
-                if (e1 || e2) throw new Error("فشل جلب البيانات");
+                if (e1 || e2) {
+                    console.error("Supabase Error:", e1 || e2);
+                    alert("⚠️ خطأ في قراءة الجداول. تأكد من وجود جداول invoices و accounting");
+                    hideLoading();
+                    return;
+                }
 
-                // 2. تصفية بيانات اليوم
                 const startOfToday = new Date();
                 startOfToday.setHours(0, 0, 0, 0);
 
                 const todayInvoices = invData.filter(i => new Date(i.created_at) >= startOfToday);
                 const todayAccounting = accData.filter(a => new Date(a.created_at) >= startOfToday);
 
-                // 3. الحسابات المالية
                 const revTotal = todayInvoices.reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
                 const expTotal = todayAccounting.reduce((s, a) => s + parseFloat(a.total_amount || a.cash_amount || 0), 0);
                 const monthlyTotal = invData.filter(i => i.is_monthly === "نعم").reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
 
-                // 4. تحديث الواجهة
                 document.getElementById('count-invoices').innerText = todayInvoices.length;
                 document.getElementById('total-revenue').innerText = revTotal.toFixed(3);
                 document.getElementById('total-expenses').innerText = expTotal.toFixed(3);
                 document.getElementById('monthly-subscriptions').innerText = monthlyTotal.toFixed(3);
 
-                // 5. بناء قائمة السجل (آخر 10 عمليات مدمجة)
                 const combined = [
-                    ...(invData || []).slice(0, 10).map(i => ({ title: i.customer_name || 'زبون', time: i.created_at, amt: i.total_amount, type: 'rev' })),
-                    ...(accData || []).slice(0, 10).map(a => ({ title: a.description || 'مصروف', time: a.created_at, amt: a.total_amount || a.cash_amount, type: 'exp' }))
-                ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
+                    ...(invData || []).slice(0, 5).map(i => ({ title: i.customer_name || 'زبون', time: i.created_at, amt: i.total_amount, type: 'rev' })),
+                    ...(accData || []).slice(0, 5).map(a => ({ title: a.description || 'مصروف', time: a.created_at, amt: a.total_amount || a.cash_amount, type: 'exp' }))
+                ].sort((a, b) => new Date(b.time) - new Date(a.time));
 
-                const logList = document.getElementById('log-list');
-                logList.innerHTML = combined.length > 0 ? combined.map(item => `
+                document.getElementById('log-list').innerHTML = combined.map(item => `
                     <div class="log-item">
                         <div>
-                            <span class="log-title">${item.title}</span>
+                            <span class="log-title">${item.title}</span><br>
                             <span class="log-time">${new Date(item.time).toLocaleTimeString('ar-BH', {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                         <span class="log-amount ${item.type}">${item.type === 'rev' ? '+' : '-'}${parseFloat(item.amt).toFixed(3)}</span>
                     </div>
-                `).join('') : '<p style="text-align:center; padding:20px; color:#999;">لا توجد عمليات مسجلة</p>';
+                `).join('') || '<p style="text-align:center; padding:20px;">لا توجد عمليات</p>';
 
-                // 6. رسم المخططات البيانية
                 renderCharts(revTotal, expTotal);
-
-                // 7. إخفاء شاشة التحميل أخيراً
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+                hideLoading();
 
             } catch (err) {
-                console.error(err);
-                document.getElementById('loadText').innerText = "⚠️ خطأ في الاتصال بالقاعدة";
+                console.error("Critical Error:", err);
+                hideLoading();
             }
         }
 
+        function hideLoading() {
+            const loader = document.getElementById('loading');
+            loader.style.opacity = '0';
+            setTimeout(() => loader.style.display = 'none', 500);
+        }
+
         function renderCharts(rev, exp) {
-            const ctxPie = document.getElementById('expensePieChart').getContext('2d');
-            new Chart(ctxPie, {
+            new Chart(document.getElementById('expensePieChart'), {
                 type: 'doughnut',
                 data: {
                     labels: ['إيرادات', 'مصروفات'],
-                    datasets: [{
-                        data: [rev || 1, exp || 0], // القيمة 1 للإيراد إذا كان صفر ليظهر المخطط
-                        backgroundColor: ['#3a1c71', '#ef4444'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+                    datasets: [{ data: [rev || 1, exp || 0], backgroundColor: ['#3a1c71', '#ef4444'], borderWidth: 0 }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { font: { size: 12, weight: 'bold' } } } },
-                    cutout: '70%'
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
             });
 
-            const ctxBar = document.getElementById('revenueBarChart').getContext('2d');
-            new Chart(ctxBar, {
+            new Chart(document.getElementById('revenueBarChart'), {
                 type: 'bar',
-                data: {
-                    labels: ['اليوم'],
-                    datasets: [{
-                        label: 'المداخيل',
-                        data: [rev],
-                        backgroundColor: '#d76d77',
-                        borderRadius: 12
-                    }]
-                },
-                options: { 
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } }
-                }
+                data: { labels: ['اليوم'], datasets: [{ data: [rev], backgroundColor: '#d76d77', borderRadius: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { grid: { display: false } } } }
             });
         }
     </script>
