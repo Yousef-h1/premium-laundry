@@ -9,51 +9,52 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* تحسينات الواجهة لتناسب الجوال بشكل طولي */
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8fafc;
-            direction: rtl;
-        }
-
-        /* تنسيق الأزرار لتكون سهلة اللمس */
-        button {
-            min-height: 48px;
-            touch-action: manipulation;
-            cursor: pointer;
-            width: 100%;
-            background-color: #1e40af;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-
-        button:disabled {
-            background-color: #94a3b8;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+        body { margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f8fafc; direction: rtl; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h2 { color: #1e40af; font-size: 20px; text-align: center; margin-bottom: 20px; }
+        label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #475569; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #3b82f6; }
+        .info-box { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
+        #invNum { font-weight: bold; color: #1e40af; }
+        #finalTotal { font-size: 24px; font-weight: 900; color: #0f172a; }
+        button { min-height: 50px; width: 100%; background-color: #1e40af; color: white; border: none; border-radius: 15px; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.3s; }
+        button:active { transform: scale(0.98); background-color: #1e3a8a; }
+        .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .flex-row input { margin-bottom: 0; width: auto; }
     </style>
 </head>
 <body>
 
 <div class="container" id="appContent" style="display:none;">
+    <h2>🧾 فاتورة جديدة</h2>
+    
+    <div class="info-box">
+        <label>رقم الفاتورة</label>
+        <div id="invNum">INV-${Math.floor(Date.now()/1000)}</div>
     </div>
 
+    <label>اسم الزبون</label>
+    <input type="text" id="custName" placeholder="أدخل اسم الزبون">
+
+    <label>رقم الهاتف</label>
+    <input type="tel" id="custPhone" placeholder="33XXXXXX">
+
+    <div class="info-box">
+        <label>المبلغ الإجمالي</label>
+        <div id="finalTotal">0.000 BHD</div>
+    </div>
+
+    <div class="flex-row">
+        <input type="checkbox" id="monthlyPayCheck">
+        <label for="monthlyPayCheck" style="margin:0">اشتراك دفع شهري</label>
+    </div>
+
+    <button id="printBtn" onclick="saveInvoice()">حفظ الفاتورة والمزامنة</button>
+</div>
+
 <script>
-    // 0. حماية الصفحة بالرقم السري (تصميم مناسب للجوال مع ترميز صحيح)
+    // 0. الحماية بالرقم السري
     (function checkAccess() {
         const pin = prompt("🔒 دخول الموظفين:\nيرجى إدخال الرقم السري:");
         if (pin === "0005") {
@@ -64,32 +65,26 @@
         }
     })();
 
-    // 1. إعداد Supabase (استخدام Anon Key)
+    // 1. إعداد Supabase
     const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. إعداد قاعدة البيانات المحلية Dexie (Offline Support)
+    // 2. إعداد Dexie
     const db = new Dexie("LaundryAppDB");
     db.version(1).stores({ 
         invoices: '++id, inv_num, customer_name, synced' 
     });
 
-    // 3. وظيفة حفظ الفاتورة (متوافقة مع شاشات اللمس)
+    // 3. وظيفة الحفظ
     async function saveInvoice() {
         const btn = document.getElementById('printBtn');
-        
         try {
             const nameEl = document.getElementById('custName');
             const phoneEl = document.getElementById('custPhone');
             const invNumEl = document.getElementById('invNum');
             const totalEl = document.getElementById('finalTotal');
             const monthlyCheck = document.getElementById('monthlyPayCheck');
-
-            if (!nameEl || !phoneEl || !invNumEl || !totalEl) {
-                console.error("عناصر الصفحة غير مكتملة");
-                return;
-            }
 
             const name = nameEl.value.trim();
             const phone = phoneEl.value.trim();
@@ -98,36 +93,24 @@
                 return alert("⚠️ يرجى كتابة اسم الزبون ورقمه");
             }
 
-            // تعطيل الزر لمنع التكرار أثناء الحفظ
-            if(btn) {
-                btn.disabled = true;
-                btn.innerText = "جاري الحفظ...";
-            }
+            btn.disabled = true;
+            btn.innerText = "جاري الحفظ...";
 
-            // معالجة المبلغ (تحويل "0.600 BHD" إلى 0.600)
-            const rawTotal = totalEl.innerText;
-            const cleanTotal = parseFloat(rawTotal.replace(/[^\d.-]/g, '')) || 0;
-
-            // تجميع قائمة الخدمات من متغير items
-            const servicesList = (typeof items !== 'undefined' && items.length > 0) 
-                ? items.map(i => `${i.name} (${i.qty})`).join(', ') 
-                : "غسيل عام";
+            const cleanTotal = parseFloat(totalEl.innerText.replace(/[^\d.-]/g, '')) || 0;
 
             const data = {
                 inv_num: invNumEl.innerText,
                 customer_name: name,
                 phone: phone,
                 total_amount: cleanTotal,
-                services: servicesList,
-                is_monthly: (monthlyCheck && monthlyCheck.checked) ? "نعم" : "لا",
+                services: "غسيل ملابس", // يمكن ربطها بنظام السلة لاحقاً
+                is_monthly: monthlyCheck.checked ? "نعم" : "لا",
                 synced: 0,
                 created_at: new Date().toISOString()
             };
 
-            // أ. الحفظ المحلي فوراً
             await db.invoices.add(data);
 
-            // ب. المزامنة السحابية مع Supabase
             if (navigator.onLine) {
                 const { error } = await supabaseClient.from('invoices').insert([{
                     inv_num: data.inv_num,
@@ -140,25 +123,21 @@
 
                 if (!error) {
                     await db.invoices.where("inv_num").equals(data.inv_num).modify({synced: 1});
-                    alert("✅ تم الحفظ بنجاح");
+                    alert("✅ تم الحفظ والمزامنة");
                 } else {
-                    console.error("Supabase Error:", error);
-                    alert("💾 تم الحفظ في الجوال (فشلت المزامنة)");
+                    alert("💾 حفظ محلي (خطأ في السحابة)");
                 }
             } else {
-                alert("📶 وضع الأوفلاين: تم الحفظ في ذاكرة الجوال");
+                alert("📶 تم الحفظ (وضع أوفلاين)");
             }
 
-            // إعادة تحميل الصفحة للطلب التالي
-            setTimeout(() => location.reload(), 800);
+            location.reload();
 
         } catch (e) {
-            console.error("Critical Error:", e);
-            alert("❌ حدث خطأ في النظام");
-            if(btn) btn.disabled = false;
+            alert("❌ خطأ في النظام");
+            btn.disabled = false;
         }
     }
 </script>
-
 </body>
 </html>
