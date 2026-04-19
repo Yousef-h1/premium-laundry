@@ -2,11 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Premium Laundry - Dashboard</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
             --primary: #3a1c71;
@@ -17,59 +18,57 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; direction: rtl; }
+
+        /* شاشة التحميل المعلقة */
+        #loading { position: fixed; inset: 0; background: var(--white); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* شاشة القفل */
         #lockScreen { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .lock-card { background: white; padding: 40px 20px; border-radius: 30px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
-        .lock-card input { width: 100%; p: 15px; border: 2px solid #eee; border-radius: 15px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; outline: none; transition: 0.3s; }
-        .lock-card input:focus { border-color: var(--primary); }
-        .lock-card button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 15px; font-size: 18px; font-weight: bold; }
+        .lock-card { background: white; padding: 40px 20px; border-radius: 35px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .lock-card input { width: 100%; padding: 15px; border: 2px solid #f0f0f0; border-radius: 18px; text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 25px; outline: none; }
+        .lock-card button { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 18px; font-size: 18px; font-weight: bold; cursor: pointer; }
 
-        /* الرأس */
-        header { background: var(--primary); color: white; padding: 25px 20px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        header h1 { font-size: 20px; margin-bottom: 5px; }
-        header p { font-size: 12px; opacity: 0.8; margin: 0; }
+        /* الهيدر المحسن للجوال */
+        header { background: var(--primary); color: white; padding: 35px 20px; border-bottom-right-radius: 40px; border-bottom-left-radius: 40px; text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        header h1 { font-size: 22px; margin: 0 0 8px 0; font-weight: 900; }
+        header p { font-size: 13px; opacity: 0.8; margin: 0; }
 
-        /* الحاويات */
-        .dashboard-container { padding: 15px; max-width: 600px; margin: auto; }
+        .dashboard-container { padding: 20px 15px; max-width: 600px; margin: auto; }
 
-        /* كروت الإحصائيات - ترتيب طولي للجوال */
-        .stat-card { background: var(--white); border-radius: 20px; padding: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .stat-info h3 { font-size: 13px; color: #6b7280; margin: 0 0 5px 0; }
-        .stat-info .value { font-size: 22px; font-weight: 800; color: var(--primary); }
-        .stat-icon { background: #f3e8ff; padding: 12px; border-radius: 15px; font-size: 24px; }
+        /* كروت الإحصائيات الطولية */
+        .stat-card { background: var(--white); border-radius: 24px; padding: 22px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.02); }
+        .stat-info h3 { font-size: 14px; color: #6b7280; margin: 0 0 6px 0; font-weight: 600; }
+        .stat-info .value { font-size: 24px; font-weight: 800; color: var(--primary); }
+        .stat-icon { background: #f3e8ff; padding: 14px; border-radius: 18px; font-size: 26px; }
 
         /* الرسوم البيانية */
-        .chart-section { background: var(--white); border-radius: 25px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .chart-section h4 { margin: 0 0 15px 0; font-size: 15px; border-right: 4px solid var(--accent); padding-right: 10px; }
+        .chart-section { background: var(--white); border-radius: 28px; padding: 25px; margin-bottom: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .chart-section h4 { margin: 0 0 20px 0; font-size: 16px; border-right: 5px solid var(--accent); padding-right: 12px; color: var(--primary); }
 
-        /* سجل العمليات */
-        .log-section { background: var(--white); border-radius: 25px; padding: 10px; margin-bottom: 80px; }
-        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f3f4f6; }
+        /* السجل */
+        .log-section { background: var(--white); border-radius: 28px; padding: 12px; margin-bottom: 40px; }
+        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-bottom: 1px solid #f9fafb; }
         .log-item:last-child { border: none; }
-        .log-details { display: flex; flex-direction: column; }
-        .log-title { font-size: 14px; font-weight: bold; }
-        .log-time { font-size: 10px; color: #9ca3af; }
-        .log-amount { font-weight: 900; font-size: 14px; }
-        .rev { color: #10b981; }
-        .exp { color: #ef4444; }
-
-        #loading { position: fixed; inset: 0; background: var(--white); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .log-title { font-size: 14px; font-weight: 700; color: #374151; display: block; }
+        .log-time { font-size: 11px; color: #9ca3af; }
+        .log-amount { font-weight: 800; font-size: 15px; }
+        .rev { color: #10b981; } /* أخضر للإيراد */
+        .exp { color: #ef4444; } /* أحمر للمصروف */
     </style>
 </head>
 <body>
 
-    <div id="loading"><div class="spinner"></div><p>جاري تحديث البيانات...</p></div>
+    <div id="loading"><div class="spinner"></div><p id="loadText">جاري مزامنة البيانات...</p></div>
 
     <div id="lockScreen">
         <div class="lock-card">
-            <h2 style="margin-top:0">Premium Dash</h2>
-            <p style="color:#666; font-size: 14px; margin-bottom: 20px;">ادخل الرقم السري للمتابعة</p>
+            <h2 style="margin:0 0 10px 0; color:var(--primary)">Premium Dash</h2>
+            <p style="color:#666; font-size: 14px; margin-bottom: 25px;">يرجى إدخال الرمز السري</p>
             <input type="password" id="passInput" inputmode="numeric" placeholder="****">
-            <button onclick="checkPass()">دخول</button>
+            <button onclick="checkPass()">دخول للنظام</button>
         </div>
     </div>
 
@@ -93,115 +92,141 @@
                 <div class="stat-icon">💸</div>
             </div>
             <div class="stat-card">
-                <div class="stat-info"><h3>عقود شهرية</h3><div class="value" id="monthly-subscriptions">0.000</div></div>
+                <div class="stat-info"><h3>عقود شهرية (نشطة)</h3><div class="value" id="monthly-subscriptions">0.000</div></div>
                 <div class="stat-icon">📅</div>
             </div>
 
             <div class="chart-section">
-                <h4>تحليل العمليات</h4>
-                <canvas id="expensePieChart" height="200"></canvas>
+                <h4>توزيع السيولة اليوم</h4>
+                <canvas id="expensePieChart" height="220"></canvas>
             </div>
 
             <div class="chart-section">
-                <h4>نشاط الأسبوع</h4>
-                <canvas id="revenueBarChart" height="150"></canvas>
+                <h4>نشاط الفواتير</h4>
+                <canvas id="revenueBarChart" height="160"></canvas>
             </div>
 
-            <h4 style="margin: 10px 10px 15px 0">آخر 10 عمليات</h4>
-            <div class="log-section" id="log-list">
-                </div>
+            <h4 style="margin: 20px 10px 15px 0; font-weight: 900;">آخر العمليات</h4>
+            <div class="log-section" id="log-list"></div>
         </div>
     </div>
 
     <script>
+        // إعداد Supabase
         const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // وظيفة التحقق من الرمز السري
         function checkPass() {
-            if (document.getElementById('passInput').value === '0005') {
+            const val = document.getElementById('passInput').value;
+            if (val === '0005') {
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
-                initDashboard();
-            } else { alert("❌ الرقم السري خطأ"); }
+                initDashboard(); // البدء بجلب البيانات بعد فتح القفل
+            } else { 
+                alert("❌ الرمز السري غير صحيح"); 
+            }
         }
 
         async function initDashboard() {
             try {
-                const todayStr = new Date().toLocaleDateString('ar-BH', { weekday: 'long', day: 'numeric', month: 'long' });
-                document.getElementById('current-date').innerText = todayStr;
+                // عرض التاريخ الحالي
+                const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                document.getElementById('current-date').innerText = new Date().toLocaleDateString('ar-BH', options);
 
-                // جلب البيانات
-                const { data: invData } = await supabaseClient.from('invoices').select('*').order('created_at', { ascending: false });
-                const { data: accData } = await supabaseClient.from('accounting').select('*').order('created_at', { ascending: false });
+                // 1. جلب البيانات من Supabase
+                const { data: invData, error: e1 } = await supabaseClient.from('invoices').select('*').order('created_at', { ascending: false });
+                const { data: accData, error: e2 } = await supabaseClient.from('accounting').select('*').order('created_at', { ascending: false });
 
-                // تصفية بيانات اليوم فقط للإحصائيات السريعة
-                const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-                
-                const todayInvoices = invData.filter(i => new Date(i.created_at) >= startOfDay);
-                const todayAccounting = accData.filter(a => new Date(a.created_at) >= startOfDay);
+                if (e1 || e2) throw new Error("فشل جلب البيانات");
 
-                // حسابات
-                const rev = todayInvoices.reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
-                const exp = todayAccounting.reduce((s, a) => s + parseFloat(a.total_amount || a.cash_amount || 0), 0);
-                const monthlies = invData.filter(i => i.is_monthly === "نعم").reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
+                // 2. تصفية بيانات اليوم
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
 
-                // تحديث الشاشة
+                const todayInvoices = invData.filter(i => new Date(i.created_at) >= startOfToday);
+                const todayAccounting = accData.filter(a => new Date(a.created_at) >= startOfToday);
+
+                // 3. الحسابات المالية
+                const revTotal = todayInvoices.reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
+                const expTotal = todayAccounting.reduce((s, a) => s + parseFloat(a.total_amount || a.cash_amount || 0), 0);
+                const monthlyTotal = invData.filter(i => i.is_monthly === "نعم").reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
+
+                // 4. تحديث الواجهة
                 document.getElementById('count-invoices').innerText = todayInvoices.length;
-                document.getElementById('total-revenue').innerText = rev.toFixed(3) + ' BHD';
-                document.getElementById('total-expenses').innerText = exp.toFixed(3) + ' BHD';
-                document.getElementById('monthly-subscriptions').innerText = monthlies.toFixed(3) + ' BHD';
+                document.getElementById('total-revenue').innerText = revTotal.toFixed(3);
+                document.getElementById('total-expenses').innerText = expTotal.toFixed(3);
+                document.getElementById('monthly-subscriptions').innerText = monthlyTotal.toFixed(3);
 
-                // بناء السجل (آخر 10 عمليات مدمجة)
+                // 5. بناء قائمة السجل (آخر 10 عمليات مدمجة)
                 const combined = [
-                    ...invData.slice(0, 10).map(i => ({ title: i.customer_name, time: i.created_at, amt: i.total_amount, type: 'rev' })),
-                    ...accData.slice(0, 10).map(a => ({ title: a.description || 'مصروف', time: a.created_at, amt: a.total_amount || a.cash_amount, type: 'exp' }))
+                    ...(invData || []).slice(0, 10).map(i => ({ title: i.customer_name || 'زبون', time: i.created_at, amt: i.total_amount, type: 'rev' })),
+                    ...(accData || []).slice(0, 10).map(a => ({ title: a.description || 'مصروف', time: a.created_at, amt: a.total_amount || a.cash_amount, type: 'exp' }))
                 ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
 
-                const logContainer = document.getElementById('log-list');
-                logContainer.innerHTML = combined.map(item => `
+                const logList = document.getElementById('log-list');
+                logList.innerHTML = combined.length > 0 ? combined.map(item => `
                     <div class="log-item">
-                        <div class="log-details">
+                        <div>
                             <span class="log-title">${item.title}</span>
                             <span class="log-time">${new Date(item.time).toLocaleTimeString('ar-BH', {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                         <span class="log-amount ${item.type}">${item.type === 'rev' ? '+' : '-'}${parseFloat(item.amt).toFixed(3)}</span>
                     </div>
-                `).join('');
+                `).join('') : '<p style="text-align:center; padding:20px; color:#999;">لا توجد عمليات مسجلة</p>';
 
-                renderCharts(rev, exp);
-                document.getElementById('loading').style.display = 'none';
-            } catch (e) { console.error(e); }
+                // 6. رسم المخططات البيانية
+                renderCharts(revTotal, expTotal);
+
+                // 7. إخفاء شاشة التحميل أخيراً
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loadText').innerText = "⚠️ خطأ في الاتصال بالقاعدة";
+            }
         }
 
         function renderCharts(rev, exp) {
-            // مخطط الدونات (توزيع اليوم)
-            new Chart(document.getElementById('expensePieChart'), {
+            const ctxPie = document.getElementById('expensePieChart').getContext('2d');
+            new Chart(ctxPie, {
                 type: 'doughnut',
                 data: {
                     labels: ['إيرادات', 'مصروفات'],
                     datasets: [{
-                        data: [rev, exp],
+                        data: [rev || 1, exp || 0], // القيمة 1 للإيراد إذا كان صفر ليظهر المخطط
                         backgroundColor: ['#3a1c71', '#ef4444'],
-                        borderWidth: 0
+                        borderWidth: 0,
+                        hoverOffset: 4
                     }]
                 },
-                options: { plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { font: { size: 12, weight: 'bold' } } } },
+                    cutout: '70%'
+                }
             });
 
-            // مخطط الأعمدة (تجريبي للأيام الأخيرة)
-            new Chart(document.getElementById('revenueBarChart'), {
+            const ctxBar = document.getElementById('revenueBarChart').getContext('2d');
+            new Chart(ctxBar, {
                 type: 'bar',
                 data: {
-                    labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء'],
+                    labels: ['اليوم'],
                     datasets: [{
-                        label: 'إجمالي المبيعات',
-                        data: [12, 19, 3, 5, 2],
+                        label: 'المداخيل',
+                        data: [rev],
                         backgroundColor: '#d76d77',
-                        borderRadius: 10
+                        borderRadius: 12
                     }]
                 },
-                options: { scales: { y: { display: false }, x: { grid: { display: false } } } }
+                options: { 
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } }
+                }
             });
         }
     </script>
