@@ -1,7 +1,34 @@
 <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<style>
+    /* تحسينات لشاشة الجوال */
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+    }
+    /* تحسين شكل نافذة تنبيهات الجوال */
+    .swal2-popup {
+        font-size: 0.9rem !important;
+    }
+    /* التأكد من أن الأزرار كبيرة كفاية للمس */
+    button {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+</style>
+
 <script>
+    // 0. حماية الصفحة بالرقم السري (بتصميم مناسب للجوال)
+    (function checkAccess() {
+        const pin = prompt("🔒 دخول الموظفين:\nيرجى إدخال الرقم السري:");
+        if (pin !== "0005") {
+            alert("❌ الرقم السري خاطئ!");
+            window.location.href = "about:blank"; // إغلاق الصفحة
+        }
+    })();
+
     // 1. إعداد Supabase
     const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
@@ -13,33 +40,54 @@
         invoices: '++id, inv_num, customer_name, synced' 
     });
 
-    // 3. وظيفة حفظ الفاتورة
+    // 3. وظيفة حفظ الفاتورة (متوافقة مع شاشات اللمس)
     async function saveInvoice() {
         try {
-            const name = document.getElementById('custName').value.trim();
-            const phone = document.getElementById('custPhone').value.trim();
+            const nameEl = document.getElementById('custName');
+            const phoneEl = document.getElementById('custPhone');
+            const invNumEl = document.getElementById('invNum');
+            const totalEl = document.getElementById('finalTotal');
+            const monthlyCheck = document.getElementById('monthlyPayCheck');
+
+            if (!nameEl || !phoneEl) return;
+
+            const name = nameEl.value.trim();
+            const phone = phoneEl.value.trim();
             
             if (!name || !phone) {
-                return alert("يرجى إكمال البيانات");
+                return alert("⚠️ يرجى كتابة اسم الزبون ورقمه");
             }
 
+            // منع الضغط المتكرر على الجوال
             const btn = document.getElementById('printBtn');
-            if(btn) btn.disabled = true;
+            if(btn) {
+                btn.disabled = true;
+                btn.innerText = "جاري الحفظ...";
+            }
+
+            // معالجة المبلغ (إزالة BHD وتحويله لرقم دقيق)
+            const rawTotal = totalEl.innerText;
+            const cleanTotal = parseFloat(rawTotal.replace(/[^\d.-]/g, '')) || 0;
+
+            // تجميع الخدمات
+            const servicesList = (typeof items !== 'undefined' && items.length > 0) 
+                ? items.map(i => `${i.name} (${i.qty})`).join(', ') 
+                : "خدمات غسيل";
 
             const data = {
-                inv_num: document.getElementById('invNum').innerText,
+                inv_num: invNumEl.innerText,
                 customer_name: name,
                 phone: phone,
-                total_amount: document.getElementById('finalTotal').innerText,
-                services: items.map(i => `${i.name} (x${i.qty})`).join(', '),
-                is_monthly: document.getElementById('monthlyPayCheck').checked ? "نعم" : "لا",
+                total_amount: cleanTotal,
+                services: servicesList,
+                is_monthly: (monthlyCheck && monthlyCheck.checked) ? "نعم" : "لا",
                 synced: 0
             };
 
-            // حفظ محلي أولاً (Offline First)
+            // أ. الحفظ المحلي (يضمن عدم ضياع البيانات في المناطق ضعيفة التغطية)
             await db.invoices.add(data);
 
-            // محاولة الحفظ سحابياً إذا وجد إنترنت
+            // ب. المزامنة السحابية
             if (navigator.onLine) {
                 const { error } = await supabaseClient.from('invoices').insert([{
                     inv_num: data.inv_num,
@@ -51,22 +99,23 @@
                 }]);
 
                 if (!error) {
-                    // تحديث حالة المزامنة في الذاكرة المحلية
                     await db.invoices.where("inv_num").equals(data.inv_num).modify({synced: 1});
-                    alert("تم الحفظ والمزامنة بنجاح");
+                    alert("✅ تم الحفظ بنجاح");
                 } else {
-                    console.error("Supabase Error:", error);
-                    alert("تم الحفظ محلياً، فشلت المزامنة مع السحاب");
+                    console.error(error);
+                    alert("💾 تم الحفظ محلياً (فشل الاتصال بالسحابة)");
                 }
             } else {
-                alert("تم الحفظ في ذاكرة الجهاز (أوفلاين)");
+                alert("📶 وضع الأوفلاين: تم الحفظ في ذاكرة الجوال");
             }
 
-            location.reload();
+            // تصفير الواجهة للطلب الجديد
+            setTimeout(() => location.reload(), 500);
 
         } catch (e) {
-            console.error("Critical Error:", e);
-            alert("حدث خطأ أثناء الحفظ");
+            console.error(e);
+            alert("❌ خطأ في النظام");
+            if(btn) btn.disabled = false;
         }
     }
 </script>
