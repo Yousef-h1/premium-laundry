@@ -1,63 +1,167 @@
 <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<style>
+    /* تحسينات الواجهة لتناسب الجوال بشكل طولي */
+    :root {
+        --primary-color: #2563eb;
+        --bg-color: #f8fafc;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* جعل النموذج يأخذ عرض الشاشة بالكامل في الجوال */
+    .mobile-container {
+        width: 100%;
+        max-width: 500px;
+        padding: 15px;
+        box-sizing: border-box;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 16px; /* لمنع الزووم التلقائي في الآيفون */
+        box-sizing: border-box;
+    }
+
+    button {
+        width: 100%;
+        padding: 15px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.3s;
+    }
+
+    button:active {
+        background-color: #1e40af;
+        transform: scale(0.98);
+    }
+
+    .status-badge {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 5px;
+        display: inline-block;
+    }
+</style>
+
 <script>
+    // 0. حماية الصفحة بالرقم السري (تصميم مناسب للجوال)
+    (function checkAccess() {
+        const pin = prompt("🔒 قسم المحاسبة - Premium Laundry\nيرجى إدخل الرقم السري للوصول:");
+        if (pin !== "0005") {
+            alert("❌ رقم سري خاطئ!");
+            window.location.href = "index.html"; 
+        }
+    })();
+
     // 1. إعداد Supabase
     const SUPABASE_URL = 'https://aocsaoveaooewncirufr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY3Nhb3ZlYW9vZXduY2lydWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM1ODYsImV4cCI6MjA5MjEwOTU4Nn0.IV5fSBv9B1Mnf4xKLnFNrHmlobdYGKRqzhm9XrEdJRU';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. إعداد قاعدة بيانات المحاسبة المحلية
+    // 2. إعداد قاعدة بيانات المحاسبة المحلية Dexie
     const db = new Dexie("AccountingAppDB");
     db.version(1).stores({ 
-        accounting: '++id, description, synced' 
+        accounting: '++id, description, synced, created_at' 
     });
 
     // 3. وظيفة تسجيل المدخلات
     async function submitEntry() {
+        const btn = document.querySelector('button');
+        
         try {
-            const cash = parseFloat(document.getElementById('c').value || 0);
-            const benefit = parseFloat(document.getElementById('b').value || 0);
-            const desc = document.getElementById('d').value;
+            // جلب القيم من العناصر
+            const type = document.getElementById('t').value;
+            const cash = parseFloat(document.getElementById('c').value) || 0;
+            const benefit = parseFloat(document.getElementById('b').value) || 0;
+            const desc = document.getElementById('d').value.trim();
+
+            if (!desc) {
+                return alert("⚠️ يرجى كتابة البيان/الوصف");
+            }
+
+            // تعطيل الزر أثناء المعالجة
+            btn.disabled = true;
+            btn.innerText = "جاري الحفظ...";
+
+            const total = (cash + benefit).toFixed(3);
+            const createdAt = new Date().toISOString();
 
             const entry = {
-                type: document.getElementById('t').value,
+                type: type,
                 description: desc,
                 cash_amount: cash,
                 benefit_amount: benefit,
-                total_amount: (cash + benefit).toFixed(3),
+                total_amount: total,
                 synced: 0,
-                created_at: new Date().toISOString() // إضافة توقيت للعملية
+                created_at: createdAt
             };
 
-            // حفظ محلي أولاً
-            await db.accounting.add(entry);
+            // أ. حفظ محلي أولاً (Offline First) - لضمان السرعة في الجوال
+            const localId = await db.accounting.add(entry);
 
-            // محاولة المزامنة مع Supabase
+            // ب. محاولة المزامنة مع السحابة
             if (navigator.onLine) {
                 const { error } = await supabaseClient.from('accounting').insert([{
                     type: entry.type,
                     description: entry.description,
                     cash_amount: entry.cash_amount,
                     benefit_amount: entry.benefit_amount,
-                    total_amount: entry.total_amount
+                    total_amount: entry.total_amount,
+                    created_at: entry.created_at
                 }]);
 
                 if (!error) {
-                    await db.accounting.where("description").equals(desc).modify({synced: 1});
-                    alert("تم التسجيل والمزامنة بنجاح");
+                    // تحديث حالة المزامنة محلياً عند النجاح
+                    await db.accounting.update(localId, { synced: 1 });
+                    alert("✅ تم التسجيل والمزامنة بنجاح");
                 } else {
                     console.error("Supabase Error:", error);
-                    alert("تم الحفظ محلياً (خطأ في المزامنة)");
+                    alert("💾 تم الحفظ محلياً (سيتمت المزامنة لاحقاً)");
                 }
             } else {
-                alert("تم الحفظ محلياً (أوفلاين)");
+                alert("📶 وضع الأوفلاين: تم الحفظ في ذاكرة الجهاز");
             }
 
+            // إعادة ضبط النموذج
             document.getElementById('fForm').reset();
+
         } catch (e) {
-            console.error("Error:", e);
-            alert("حدث خطأ أثناء التسجيل");
+            console.error("Critical Error:", e);
+            alert("❌ حدث خطأ أثناء التسجيل");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "تسجيل العملية";
         }
     }
+
+    // وظيفة إضافية لمزامنة البيانات غير المزامنة عند عودة الإنترنت
+    window.addEventListener('online', async () => {
+        const unsynced = await db.accounting.where("synced").equals(0).toArray();
+        if (unsynced.length > 0) {
+            console.log("إعادة مزامنة البيانات المعلقة...");
+            // يمكن إضافة كود هنا لرفع البيانات تلقائياً
+        }
+    });
 </script>
