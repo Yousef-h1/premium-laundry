@@ -166,8 +166,9 @@
             const d = now.getDate().toString().padStart(2, '0');
             const m = (now.getMonth() + 1).toString().padStart(2, '0');
             const y = now.getFullYear().toString();
-            const cleanDate = dateString.replace(/\s/g, '');
-            return cleanDate.includes(`${d}/${m}/${y}`) || (cleanDate.includes(d) && cleanDate.includes(m) && cleanDate.includes(y));
+            const todayStr = `${d}/${m}/${y}`;
+            const cleanDate = dateString.split(' ')[0].trim();
+            return cleanDate.includes(todayStr) || cleanDate === todayStr;
         }
 
         function updateDashboard(rows) {
@@ -180,7 +181,7 @@
                 const invId = row[1]; 
                 const name = row[2] || "عميل غير معروف"; 
                 const phone = row[3] || ""; 
-                const totalValF = parseFloat(row[5]?.replace(/[^\d.]/g, '')) || 0; 
+                const totalValF = parseFloat(row[5]?.toString().replace(/[^\d.]/g, '')) || 0; 
                 const status = (row[6] || "").trim(); 
                 const datePaidJ = row[9] || ""; 
 
