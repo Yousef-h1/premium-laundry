@@ -1,196 +1,208 @@
 import { useState, useEffect } from 'react';
-import { Trash2, MessageCircle, Save, User, Phone, CreditCard, Tag, PlusCircle, RefreshCw } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, MessageCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Service, InvoiceItem } from '../lib/types';
-import { generateInvoiceNumber, buildWhatsAppMessage, formatPrice, formatWhatsAppPhone } from '../lib/utils';
+import { Invoice, InvoiceItem } from '../lib/types';
+import { formatPrice, buildWhatsAppMessage, formatWhatsAppPhone } from '../lib/utils';
 
-interface CartItem extends InvoiceItem {
-  tempId: string;
-  is_fast: boolean;
-}
+export function OrdersPage() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [itemsMap, setItemsMap] = useState<Record<string, InvoiceItem[]>>({});
 
-interface Props {
-  onOrderSaved: () => void;
-}
-
-export function NewOrderPage({ onOrderSaved }: Props) {
-  // الحالات الأساسية للنظام
-  const [services, setServices] = useState<Service[]>([]);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [isCredit, setIsCredit] = useState(false);
-  const [discountInput, setDiscountInput] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [saving, setSaving] = useState(false);
-
-  // حالات نموذج الإدخال (الطريقة القديمة التي طلبتها)
-  const [selectedServiceId, setSelectedServiceId] = useState('');
-  const [serviceMode, setServiceMode] = useState<'wash_iron' | 'iron_only'>('wash_iron');
-  const [isUrgent, setIsUrgent] = useState(false);
-  const [manualPrice, setManualPrice] = useState('');
-  const [quantity, setQuantity] = useState(1);
-
-  useEffect(() => {
-    loadServices();
-  }, []);
-
-  const loadServices = async () => {
-    const { data } = await supabase.from('services').select('*').order('name_ar');
-    if (data) setServices(data);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('invoices')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setInvoices(data as Invoice[]);
+    setLoading(false);
   };
 
-  const subtotal = cart.reduce((s, i) => s + i.total_price, 0);
-  const total = Math.max(0, subtotal - (parseFloat(discountInput) || 0));
+  useEffect(() => { load(); }, []);
 
-  // --- منطق إضافة الخدمة (AddItem) ---
-  const addItemToCart = () => {
-    const service = services.find(s => s.id === selectedServiceId);
-    if (!service) return;
+  const filtered = invoices.filter(
+    (inv) =>
+      inv.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+      inv.customer_phone.includes(search) ||
+      inv.invoice_number.toLowerCase().includes(search.toLowerCase())
+  );
 
-    // القاعدة: السعر اليدوي له الأولوية، وإلا نستخدم السعر من قاعدة البيانات
-    let basePrice = manualPrice !== '' ? parseFloat(manualPrice) : 
-                    (serviceMode === 'wash_iron' ? (service.wash_iron_price || 0) : (service.iron_only_price || 0));
-    
-    // احتساب الاستعجال (مضاعفة السعر)
-    const unitPrice = isUrgent ? basePrice * 2 : basePrice;
-
-    const newItem: CartItem = {
-      tempId: Date.now().toString(),
-      service_id: service.id,
-      service_name_en: service.name_en,
-      service_name_ar: service.name_ar,
-      service_type: serviceMode,
-      quantity: quantity,
-      unit_price: unitPrice,
-      total_price: unitPrice * quantity,
-      is_fast: isUrgent,
-    };
-
-    setCart([...cart, newItem]);
-    // إعادة ضبط النموذج للإدخال القادم
-    setSelectedServiceId(''); setManualPrice(''); setQuantity(1); setIsUrgent(false);
-  };
-
-  // --- منطق الحفظ النهائي والواتساب ---
-  const handleSave = async (sendWhatsApp = false) => {
-    if (cart.length === 0 || !customerPhone) return;
-    setSaving(true);
-    const invNumber = generateInvoiceNumber();
-    
-    const { data: inv, error } = await supabase.from('invoices').insert({
-      invoice_number: invNumber,
-      customer_name: customerName || 'عميل',
-      customer_phone: customerPhone,
-      is_fast_service: cart.some(i => i.is_fast),
-      discount: parseFloat(discountInput) || 0,
-      subtotal, total, status: 'unpaid', notes: isCredit ? 'credit' : '',
-    }).select().single();
-
-    if (inv) {
-      const itemsToInsert = cart.map(({ tempId, ...rest }) => ({ ...rest, invoice_id: inv.id }));
-      await supabase.from('invoice_items').insert(itemsToInsert);
-      
-      if (sendWhatsApp) {
-        const msg = buildWhatsAppMessage({ ...inv, created_at: new Date().toISOString() }, cart);
-        window.open(`https://wa.me/${formatWhatsAppPhone(customerPhone)}?text=${encodeURIComponent(msg)}`, '_blank');
-      }
-      
-      setCart([]); setCustomerName(''); setCustomerPhone(''); setDiscountInput(''); setIsCredit(false);
-      onOrderSaved();
+  const toggleExpand = async (id: string) => {
+    if (expanded === id) { setExpanded(null); return; }
+    setExpanded(id);
+    if (!itemsMap[id]) {
+      const { data } = await supabase.from('invoice_items').select('*').eq('invoice_id', id);
+      if (data) setItemsMap((prev) => ({ ...prev, [id]: data }));
     }
-    setSaving(false);
+  };
+
+  const sendWhatsApp = (inv: Invoice) => {
+    const items = itemsMap[inv.id] || [];
+    const msg = buildWhatsAppMessage(inv, items);
+    const phone = formatWhatsAppPhone(inv.customer_phone);
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const statusMap: Record<string, { ar: string; en: string; bg: string; color: string }> = {
+    unpaid: { ar: 'غير مدفوع', en: 'Unpaid', bg: '#fee2e2', color: '#dc2626' },
+    paid_cash: { ar: 'كاش', en: 'Cash', bg: '#dcfce7', color: '#16a34a' },
+    paid_benefit: { ar: 'بنفت', en: 'Benefit', bg: '#dbeafe', color: '#2563eb' },
+    cancelled: { ar: 'ملغي', en: 'Cancelled', bg: '#f3f4f6', color: '#6b7280' },
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-32" style={{ background: '#f8fafc', direction: 'rtl' }}>
-      {/* 1. قسم بيانات العميل */}
-      <div className="p-4 bg-white shadow-sm space-y-3">
-        <div className="flex justify-between items-center">
-          <h2 className="font-bold text-blue-900" style={{ fontFamily: 'Tajawal' }}>بيانات الفاتورة</h2>
-          <button onClick={loadServices} className="p-2 bg-gray-100 rounded-lg border-none hover:bg-gray-200 transition-colors"><RefreshCw size={14}/></button>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="اسم العميل" className="p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm focus:border-blue-300" />
-          <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="رقم الهاتف" className="p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-mono focus:border-blue-300" />
-        </div>
-        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl border border-blue-100">
-           <span className="text-xs font-bold text-blue-700">القائمة الشهرية (آجل)</span>
-           <input type="checkbox" checked={isCredit} onChange={() => setIsCredit(!isCredit)} className="w-5 h-5 cursor-pointer" />
-        </div>
-      </div>
-
-      {/* 2. لوحة الإدخال السريع (نظام POS القديم) */}
-      <div className="m-4 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 space-y-4">
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold text-gray-400 mr-1">الخدمة | Service</label>
-          <select 
-            value={selectedServiceId} 
-            onChange={e => setSelectedServiceId(e.target.value)}
-            className="w-full p-3 bg-white border-2 border-blue-50 rounded-xl outline-none text-sm font-bold text-gray-700 focus:border-blue-400"
-          >
-            <option value="">-- اختر قطعة من القائمة --</option>
-            {services.map(s => <option key={s.id} value={s.id}>{s.name_ar} | {s.name_en}</option>)}
-          </select>
-        </div>
-
-        <div className="flex gap-2">
-          <button onClick={() => setServiceMode('wash_iron')} className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${serviceMode === 'wash_iron' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>غسيل وكوي</button>
-          <button onClick={() => setServiceMode('iron_only')} className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${serviceMode === 'iron_only' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>كوي فقط</button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-amber-600 mr-1">تعديل السعر (BHD)</label>
-            <input type="number" value={manualPrice} onChange={e => setManualPrice(e.target.value)} placeholder="سعر يدوي" className="w-full p-3 bg-amber-50 border border-amber-200 rounded-xl outline-none text-center font-bold text-amber-700 focus:border-amber-400" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-gray-400 mr-1">الكمية</label>
-            <input type="number" value={quantity} onChange={e => setQuantity(parseInt(e.target.value) || 1)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-center font-bold focus:border-blue-300" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-100">
-           <span className="text-xs font-bold text-orange-700">⚡ مستعجل (مضاعفة السعر)</span>
-           <input type="checkbox" checked={isUrgent} onChange={() => setIsUrgent(!isUrgent)} className="w-5 h-5 cursor-pointer" />
-        </div>
-
-        <button onClick={addItemToCart} disabled={!selectedServiceId} className="w-full py-4 bg-blue-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg active:scale-95 transition-transform">
-          <PlusCircle size={18} /> إضافة للطلب
-        </button>
-      </div>
-
-      {/* 3. قائمة المواد المضافة (Preview) */}
-      <div className="px-4 space-y-2">
-        <p className="text-[11px] font-bold text-gray-400 px-1 uppercase tracking-wider">تفاصيل الفاتورة الحالية:</p>
-        {cart.length === 0 && <p className="text-center py-4 text-gray-400 text-xs italic">لم يتم إضافة أي قطعة بعد..</p>}
-        {cart.map(item => (
-          <div key={item.tempId} className="bg-white p-3 rounded-xl flex justify-between items-center border-r-4 border-blue-600 shadow-sm animate-in fade-in slide-in-from-right-2">
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#f8f9fa' }}>
+      
+      <header className="flex-shrink-0 z-20 shadow-sm" style={{ background: 'white' }}>
+        <div className="px-4 pt-4 pb-3 space-y-3">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-bold text-gray-800">{item.service_name_ar} <span className="text-[10px] text-gray-400">×{item.quantity}</span></div>
-              <div className="text-[10px] text-blue-600 font-bold">{item.service_type === 'wash_iron' ? 'غسيل وكوي' : 'كوي فقط'} {item.is_fast && ' | مستعجل'}</div>
+              <h1 style={{ fontFamily: 'Tajawal', fontWeight: 700, fontSize: 22, color: '#1a4d6e', margin: 0 }}>
+                الطلبات
+              </h1>
+              <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#9ca3af', margin: 0 }}>
+                Orders ({invoices.length})
+              </p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="font-bold text-sm text-gray-900">{formatPrice(item.total_price)}</span>
-              <button onClick={() => setCart(cart.filter(i => i.tempId !== item.tempId))} className="p-2 text-red-500 bg-red-50 rounded-lg border-none hover:bg-red-100"><Trash2 size={16}/></button>
-            </div>
+            <button
+              onClick={load}
+              className="active:scale-95 transition-transform"
+              style={{ background: '#f1f3f5', border: 'none', borderRadius: 12, padding: '10px', cursor: 'pointer' }}
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} color="#1a4d6e" />
+            </button>
           </div>
-        ))}
-      </div>
 
-      {/* 4. الإجمالي النهائي وأزرار الحفظ (ثابتة بالأسفل) */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-[100]">
-        <div className="flex items-center gap-2 mb-3">
-          <Tag size={16} className="text-gray-400" />
-          <input type="number" value={discountInput} onChange={e => setDiscountInput(e.target.value)} placeholder="خصم" className="w-24 p-2 bg-gray-50 border rounded-lg text-sm outline-none" />
-          <div className="flex-1 text-left font-black text-blue-900 text-xl">{formatPrice(total)} BHD</div>
+          <div className="relative">
+            <Search size={16} className="absolute" style={{ top: '50%', right: 12, transform: 'translateY(-50%)', color: '#9ca3af' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث باسم العميل أو الرقم..."
+              style={{
+                width: '100%', padding: '12px 38px 12px 12px', border: '1.5px solid #eee',
+                borderRadius: 14, fontFamily: 'Tajawal', fontSize: 15, background: '#f8f9fa',
+                outline: 'none', color: '#212529', direction: 'rtl'
+              }}
+            />
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => handleSave(false)} disabled={saving || cart.length === 0} className="bg-gray-800 text-white py-4 rounded-2xl font-bold text-xs hover:bg-gray-900 transition-colors">حفظ فقط</button>
-          <button onClick={() => handleSave(true)} disabled={saving || cart.length === 0 || !customerPhone} className="bg-green-600 text-white py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-green-700 transition-colors">
-            <MessageCircle size={16} /> اعتماد وواتساب
-          </button>
-        </div>
-      </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a4d6e]"></div>
+            <span style={{ color: '#9ca3af', fontFamily: 'Tajawal' }}>جارٍ جلب البيانات...</span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-20 text-center" style={{ color: '#9ca3af', fontFamily: 'Tajawal' }}>
+            لا توجد نتائج مطابقة
+          </div>
+        ) : (
+          filtered.map((inv) => {
+            const isExp = expanded === inv.id;
+            const s = statusMap[inv.status] || statusMap.unpaid;
+            const items = itemsMap[inv.id] || [];
+
+            return (
+              <div
+                key={inv.id}
+                className="rounded-2xl border border-gray-100 transition-all"
+                style={{ background: 'white', boxShadow: isExp ? '0 8px 20px rgba(0,0,0,0.1)' : '0 2px 6px rgba(0,0,0,0.04)' }}
+              >
+                <button
+                  onClick={() => toggleExpand(inv.id)}
+                  className="w-full text-right px-4 py-4 flex items-center justify-between gap-3"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span style={{ fontFamily: 'Tajawal', fontWeight: 700, fontSize: 16, color: '#2d3436' }}>
+                        {inv.customer_name || 'عميل نقدي'}
+                      </span>
+                      {inv.is_fast_service && <span>⚡</span>}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                      <span className="bg-gray-100 px-2 py-0.5 rounded font-mono">#{inv.invoice_number}</span>
+                      <span>•</span>
+                      <span style={{ fontFamily: 'Tajawal' }}>
+                         {new Date(inv.created_at).toLocaleDateString('ar-BH', { day: '2-digit', month: 'short' })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-left flex flex-col items-end gap-2">
+                    <span
+                      style={{
+                        background: s.bg, color: s.color, fontFamily: 'Tajawal', fontWeight: 800,
+                        fontSize: 10, padding: '3px 10px', borderRadius: 8,
+                      }}
+                    >
+                      {s.ar}
+                    </span>
+                    <span style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: 16, color: '#1a4d6e' }}>
+                      {formatPrice(inv.total)} <small className="text-[10px]">BHD</small>
+                    </span>
+                  </div>
+                  {isExp ? <ChevronUp size={18} className="text-gray-300" /> : <ChevronDown size={18} className="text-gray-300" />}
+                </button>
+
+                {isExp && (
+                  <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="bg-gray-50 rounded-xl p-3 space-y-3 mb-4">
+                      {items.length === 0 ? (
+                        <div className="text-center py-2 text-xs text-gray-400">جارٍ التحميل...</div>
+                      ) : (
+                        items.map((item) => (
+                          <div key={item.id} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                            <div className="flex-1">
+                              {/* هنا يتم عرض الخدمة باللغتين كما سحبتها من الكود القديم */}
+                              <div className="font-bold text-gray-700">
+                                {item.service_name_ar} 
+                                <span className="text-[10px] text-gray-400 font-normal mr-1">| {item.service_name_en}</span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {item.service_type === 'wash_iron' ? 'غسيل وكي' : 'كي فقط'} × {item.quantity}
+                              </div>
+                            </div>
+                            <div className="font-bold text-[#1a4d6e]">{formatPrice(item.total_price)}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="space-y-1">
+                        {inv.discount > 0 && (
+                          <div className="text-xs text-red-500 font-bold">الخصم: -{formatPrice(inv.discount)} BHD</div>
+                        )}
+                        <div className="text-lg font-black text-[#1a4d6e]" style={{ fontFamily: 'Tajawal' }}>
+                          الإجمالي: {formatPrice(inv.total)} BHD
+                        </div>
+                      </div>
+                      
+                      {inv.customer_phone && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); sendWhatsApp(inv); }}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white active:scale-95 transition-all shadow-md"
+                          style={{ background: '#25D366', border: 'none', cursor: 'pointer', fontFamily: 'Tajawal', fontWeight: 700, fontSize: 14 }}
+                        >
+                          <MessageCircle size={18} />
+                          إرسال واتساب
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </main>
     </div>
   );
 }
