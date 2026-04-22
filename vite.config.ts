@@ -7,23 +7,36 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      injectRegister: 'auto',
+      includeAssets: ['vite.svg', 'favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         name: 'مغسلة الخدمة المميزة | Premium Service Laundry',
-        short_name: 'مغسلة',
-        description: 'Premium laundry management app',
+        short_name: 'المميزة',
+        description: 'نظام إدارة مغسلة الخدمة المميزة المؤتمت',
         theme_color: '#1a4d6e',
-        background_color: '#f1f3f5',
-        display: 'standalone',
-        orientation: 'portrait',
+        background_color: '#f8f9fa',
+        display: 'standalone', // يضمن فتح التطبيق بملء الشاشة بدون شريط المتصفح
+        scope: '/',
         start_url: '/',
+        orientation: 'portrait',
         icons: [
-          { src: 'vite.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: 'vite.svg', sizes: '512x512', type: 'image/svg+xml' },
+          {
+            src: 'vite.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'any maskable' // مهم جداً لدعم أيقونات الأندرويد والآيفون بشكل صحيح
+          },
+          {
+            src: 'vite.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
+          },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // ضمان عمل المزامنة في الخلفية والعمل بدون إنترنت
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -35,6 +48,7 @@ export default defineConfig({
             },
           },
           {
+            // تحسين الاتصال بـ Supabase: نستخدم NetworkFirst لضمان أحدث البيانات مع دعم الأوفلاين
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -48,6 +62,17 @@ export default defineConfig({
       },
     }),
   ],
+  // --- الجزء الجديد والأهم لإصلاح خطأ Coolify ---
+  server: {
+    host: '0.0.0.0', // يخبر Vite أن يستقبل الاتصالات من خارج الحاوية
+    port: 5173,      // تأكد من ضبط هذا المنفذ في Coolify (Internal Port)
+    strictPort: true,
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
+  // -------------------------------------------
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
