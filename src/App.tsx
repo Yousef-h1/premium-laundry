@@ -1,18 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-
-// استيراد المكونات - تم تصحيح المسارات لتناسب الهيكل الفعلي
+// استيراد المكونات - مسارات مصححة بدقة
 import { BottomNav } from './components/BottomNav';
 import { PinPad } from './components/PinPad';
 
-// استيراد الصفحات - ملاحظة: تم تعديل المسميات لتطابق ملفات GitHub (PascalCase)
-// تأكد أن أسماء الملفات في GitHub هي DashboardPage.tsx وليس dashboardPage.tsx
+// استيراد الصفحات - تأكد من مطابقة حالة الأحرف في GitHub حرفياً
 import { DashboardPage } from './pages/DashboardPage';
 import { NewOrderPage } from './pages/NewOrderPage';
 import { UnpaidPage } from './pages/UnpaidPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportsPage } from './pages/ReportsPage';
 
-// استيراد المكتبات والتعريفات
+// المكتبات الأساسية
 import { Page } from './lib/types';
 import { supabase } from './lib/supabase';
 import { getPendingCount, setupOnlineListener } from './lib/offlineSync';
@@ -29,20 +27,24 @@ export default function App() {
   const [reportsLocked, setReportsLocked] = useState(true);
   const [requestedPage, setRequestedPage] = useState<Page | null>(null);
 
+  // إدارة قفل التطبيق عند الفتح
   useEffect(() => {
     setAppLocked(isAppLocked());
     setReportsLocked(isReportsLocked());
   }, []);
 
+  // تحديث عدد الطلبات غير المدفوعة مع معالجة الأخطاء
   const loadUnpaidCount = useCallback(async () => {
     try {
-      const { count } = await supabase
+      const { count, error } = await supabase
         .from('invoices')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'unpaid');
+      
+      if (error) throw error;
       setUnpaidCount(count || 0);
-    } catch (error) {
-      console.error("Supabase Connection Error:", error);
+    } catch (err) {
+      console.error("Supabase Sync Error:", err);
     }
   }, []);
 
@@ -50,6 +52,7 @@ export default function App() {
     loadUnpaidCount();
   }, [loadUnpaidCount, refreshKey]);
 
+  // مستمع المزامنة (Offline Sync)
   useEffect(() => {
     getPendingCount().then(setPendingSync);
 
@@ -57,9 +60,9 @@ export default function App() {
       setSyncing(false);
       setPendingSync(0);
       if (result.synced > 0) {
-        setSyncBanner(`تمت مزامنة البيانات بنجاح`);
+        setSyncBanner(`تمت مزامنة ${result.synced} فاتورة بنجاح`);
         setTimeout(() => setSyncBanner(null), 4000);
-        setRefreshKey((k) => k + 1);
+        setRefreshKey(k => k + 1);
         loadUnpaidCount();
       }
     });
@@ -73,12 +76,6 @@ export default function App() {
     };
   }, [loadUnpaidCount]);
 
-  const handleOrderSaved = () => {
-    setRefreshKey((k) => k + 1);
-    loadUnpaidCount();
-    getPendingCount().then(setPendingSync);
-  };
-
   const handlePageChange = (newPage: Page) => {
     if (newPage === 'reports' && isReportsLocked()) {
       setRequestedPage('reports');
@@ -88,22 +85,10 @@ export default function App() {
     }
   };
 
-  const handleAppUnlock = () => {
-    unlockApp();
-    setAppLocked(false);
-  };
-
-  const handleReportsUnlock = () => {
-    unlockReports();
-    setReportsLocked(false);
-    setPage('reports');
-    setRequestedPage(null);
-  };
-
   const renderPage = () => {
     switch (page) {
       case 'dashboard': return <DashboardPage key={refreshKey} />;
-      case 'new-order': return <NewOrderPage onOrderSaved={handleOrderSaved} />;
+      case 'new-order': return <NewOrderPage onOrderSaved={() => setRefreshKey(k => k + 1)} />;
       case 'unpaid': return <UnpaidPage key={refreshKey} />;
       case 'expenses': return <ExpensesPage key={refreshKey} />;
       case 'reports': return <ReportsPage key={refreshKey} />;
@@ -116,7 +101,7 @@ export default function App() {
       <PinPad
         title="App Lock"
         titleAr="نظام الخدمة المميزة"
-        onSuccess={handleAppUnlock}
+        onSuccess={() => { unlockApp(); setAppLocked(false); }}
         correctPin="0005"
         isOpen={appLocked}
       />
@@ -124,101 +109,110 @@ export default function App() {
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100dvh', // يضمن ملء الشاشة في الجوال (iOS & Android)
-        maxWidth: 500,
-        margin: '0 auto',
-        position: 'relative',
-        background: '#1a222a', // اللون الداكن المطلوب POS
-        overflow: 'hidden',
-        touchAction: 'manipulation'
-      }}
-    >
+    <div style={appContainerStyle}>
       <PinPad
         title="Reports Lock"
         titleAr="قفل المحاسبة"
-        onSuccess={handleReportsUnlock}
+        onSuccess={() => { unlockReports(); setReportsLocked(false); setPage('reports'); setRequestedPage(null); }}
         correctPin="1988"
         isOpen={requestedPage === 'reports' && reportsLocked}
       />
 
-      <AppHeader pendingSync={pendingSync} syncing={syncing} />
+      <header style={headerStyle}>
+        <div style={headerContentStyle}>
+          <div>
+            <h1 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 800 }}>الخدمة المميزة</h1>
+            <p style={{ fontSize: '0.6rem', margin: 0, opacity: 0.5 }}>PREMIUM LAUNDRY POS</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {pendingSync > 0 && (
+              <span style={syncBadgeStyle}>{pendingSync} معلق</span>
+            )}
+            <div style={dateBadgeStyle}>
+              {new Date().toLocaleDateString('ar-BH', { day: 'numeric', month: 'short' })}
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {syncBanner && (
-        <div style={bannerStyle}>{syncBanner}</div>
-      )}
+      {syncBanner && <div style={bannerStyle}>{syncBanner}</div>}
 
-      {/* منطقة المحتوى: تمرير داخلي فقط لمنع "الرولينج" المزعج */}
-      <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', position: 'relative' }}>
+      <main style={mainContentStyle}>
         {renderPage()}
       </main>
 
-      {/* شريط التنقل السفلي */}
       <BottomNav current={page} onChange={handlePageChange} unpaidCount={unpaidCount} />
 
       <style>{`
-        body { overscroll-behavior-y: none; margin: 0; padding: 0; background: #1a222a; font-family: 'Tajawal', sans-serif; }
+        body { background: #1a222a; margin: 0; font-family: 'Tajawal', sans-serif; overscroll-behavior-y: none; }
+        * { -webkit-tap-highlight-color: transparent; }
         main::-webkit-scrollbar { display: none; }
-        * { -webkit-tap-highlight-color: transparent; outline: none; }
       `}</style>
     </div>
   );
 }
 
-function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boolean }) {
-  const today = new Date().toLocaleDateString('ar-BH', {
-    weekday: 'short', month: 'short', day: 'numeric',
-  });
+// --- تنسيقات التصميم الداكن POS ---
+const appContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100dvh',
+  maxWidth: '500px',
+  margin: '0 auto',
+  background: '#1a222a',
+  color: 'white',
+  overflow: 'hidden',
+  position: 'relative'
+};
 
-  return (
-    <div style={{
-      background: '#1a222a',
-      padding: '12px 20px',
-      paddingTop: 'calc(env(safe-area-inset-top) + 12px)', // دعم نوتش الآيفون
-      flexShrink: 0,
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-      zIndex: 100
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontFamily: 'Tajawal', fontWeight: 700, fontSize: 18, color: 'white', margin: 0 }}>
-            الخدمة المميزة
-          </h1>
-          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.3)', margin: 0 }}>
-            PREMIUM LAUNDRY SYSTEM
-          </p>
-        </div>
+const headerStyle: React.CSSProperties = {
+  background: '#1a222a',
+  padding: '15px 20px',
+  paddingTop: 'calc(env(safe-area-inset-top) + 10px)',
+  borderBottom: '1px solid rgba(255,255,255,0.05)',
+  flexShrink: 0
+};
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {(pendingSync > 0 || syncing) && (
-            <div style={{
-              background: syncing ? '#f59e0b' : '#ef4444',
-              borderRadius: 8, padding: '4px 8px',
-              display: 'flex', alignItems: 'center', gap: 6
-            }}>
-              <span className={syncing ? "animate-pulse" : ""} style={{ width: 6, height: 6, borderRadius: '50%', background: 'white' }} />
-              <span style={{ fontFamily: 'Tajawal', fontSize: 10, color: 'white', fontWeight: 700 }}>
-                {syncing ? 'مزامنة...' : `${pendingSync} معلق`}
-              </span>
-            </div>
-          )}
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 12px' }}>
-            <span style={{ fontFamily: 'Tajawal', fontSize: 12, color: '#fff', fontWeight: 600 }}>
-              {today}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const headerContentStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center'
+};
+
+const mainContentStyle: React.CSSProperties = {
+  flex: 1,
+  overflowY: 'auto',
+  paddingBottom: '20px',
+  position: 'relative'
+};
+
+const syncBadgeStyle: React.CSSProperties = {
+  background: '#ef4444',
+  fontSize: '9px',
+  padding: '4px 8px',
+  borderRadius: '6px',
+  fontWeight: 'bold'
+};
+
+const dateBadgeStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.05)',
+  padding: '5px 10px',
+  borderRadius: '8px',
+  fontSize: '11px'
+};
 
 const bannerStyle: React.CSSProperties = {
-  position: 'absolute', top: 80, left: 20, right: 20, zIndex: 1000,
-  background: '#10b981', color: 'white', borderRadius: 12,
-  padding: '12px', fontFamily: 'Tajawal', fontWeight: 700,
-  fontSize: 13, textAlign: 'center', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+  position: 'absolute',
+  top: '80px',
+  left: '20px',
+  right: '20px',
+  background: '#10b981',
+  color: 'white',
+  padding: '12px',
+  borderRadius: '12px',
+  textAlign: 'center',
+  zIndex: 100,
+  fontSize: '13px',
+  fontWeight: 'bold',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
 };
