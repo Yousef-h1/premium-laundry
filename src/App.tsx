@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-// تصحيح المسارات: في GitHub المجلدات تبدأ بأحرف صغيرة src/components و src/pages
+
+// استيراد المكونات - المسارات مصححة لتناسب هيكل GitHub
 import { BottomNav } from './components/BottomNav';
 import { PinPad } from './components/PinPad';
 
-// تصحيح الاستدعاءات لتطابق أسماء الملفات في GitHub حرفياً (PascalCase للملفات)
+// استيراد الصفحات - التأكد من مطابقة أسماء الملفات PascalCase
 import { DashboardPage } from './pages/DashboardPage';
 import { NewOrderPage } from './pages/NewOrderPage';
 import { UnpaidPage } from './pages/UnpaidPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportsPage } from './pages/ReportsPage';
 
-// استيراد الإعدادات من مجلد lib
+// استيراد المكتبات والأنواع
 import { Page } from './lib/types';
 import { supabase } from './lib/supabase';
 import { getPendingCount, setupOnlineListener } from './lib/offlineSync';
@@ -40,7 +41,7 @@ export default function App() {
         .eq('status', 'unpaid');
       setUnpaidCount(count || 0);
     } catch (error) {
-      console.error("Supabase Error:", error);
+      console.error("Supabase Connection Error:", error);
     }
   }, []);
 
@@ -55,7 +56,7 @@ export default function App() {
       setSyncing(false);
       setPendingSync(0);
       if (result.synced > 0) {
-        setSyncBanner(`تمت مزامنة ${result.synced} فاتورة بنجاح`);
+        setSyncBanner(`تمت مزامنة البيانات بنجاح`);
         setTimeout(() => setSyncBanner(null), 4000);
         setRefreshKey((k) => k + 1);
         loadUnpaidCount();
@@ -112,8 +113,8 @@ export default function App() {
   if (appLocked) {
     return (
       <PinPad
-        title="دخول النظام"
-        titleAr="مغسلة الخدمة المميزة"
+        title="App Lock"
+        titleAr="نظام الخدمة المميزة"
         onSuccess={handleAppUnlock}
         correctPin="0005"
         isOpen={appLocked}
@@ -130,14 +131,14 @@ export default function App() {
         maxWidth: 500,
         margin: '0 auto',
         position: 'relative',
-        background: '#1a222a', // اللون الداكن الاحترافي POS
+        background: '#1a222a', // التصميم الداكن POS
         overflow: 'hidden',
         touchAction: 'manipulation'
       }}
     >
       <PinPad
-        title="قفل التقارير"
-        titleAr="القسم المحاسبي"
+        title="Reports Lock"
+        titleAr="قفل المحاسبة"
         onSuccess={handleReportsUnlock}
         correctPin="1988"
         isOpen={requestedPage === 'reports' && reportsLocked}
@@ -149,6 +150,7 @@ export default function App() {
         <div style={bannerStyle}>{syncBanner}</div>
       )}
 
+      {/* منطقة المحتوى: تمرير داخلي حصري يمنع مشاكل الرولينج */}
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', position: 'relative' }}>
         {renderPage()}
       </main>
@@ -166,9 +168,7 @@ export default function App() {
 
 function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boolean }) {
   const today = new Date().toLocaleDateString('ar-BH', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
+    weekday: 'short', month: 'short', day: 'numeric',
   });
 
   return (
@@ -185,8 +185,8 @@ function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boo
           <h1 style={{ fontFamily: 'Tajawal', fontWeight: 700, fontSize: 18, color: 'white', margin: 0 }}>
             الخدمة المميزة
           </h1>
-          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.5)', margin: 0, textTransform: 'uppercase' }}>
-            Laundry System Pro
+          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+            PREMIUM LAUNDRY POS
           </p>
         </div>
 
@@ -195,8 +195,7 @@ function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boo
             <div style={{
               background: syncing ? '#f59e0b' : '#ef4444',
               borderRadius: 8, padding: '4px 8px',
-              display: 'flex', alignItems: 'center', gap: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              display: 'flex', alignItems: 'center', gap: 6
             }}>
               <span className={syncing ? "animate-pulse" : ""} style={{ width: 6, height: 6, borderRadius: '50%', background: 'white' }} />
               <span style={{ fontFamily: 'Tajawal', fontSize: 10, color: 'white', fontWeight: 700 }}>
@@ -204,8 +203,8 @@ function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boo
               </span>
             </div>
           )}
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 12px', border: '1px solid rgba(255,255,255,0.03)' }}>
-            <span style={{ fontFamily: 'Tajawal', fontSize: 12, color: '#fff', margin: 0, fontWeight: 600 }}>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 12px' }}>
+            <span style={{ fontFamily: 'Tajawal', fontSize: 12, color: '#fff', fontWeight: 600 }}>
               {today}
             </span>
           </div>
