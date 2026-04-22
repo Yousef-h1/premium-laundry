@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-// استيراد المكونات - تأكد من وجود المجلد components داخل src
+// تصحيح المسارات: في GitHub المجلدات تبدأ بأحرف صغيرة src/components و src/pages
 import { BottomNav } from './components/BottomNav';
 import { PinPad } from './components/PinPad';
 
-// استيراد الصفحات - تأكد من مطابقة أسماء الملفات في GitHub حرفياً
+// تصحيح الاستدعاءات لتطابق أسماء الملفات في GitHub حرفياً (PascalCase للملفات)
 import { DashboardPage } from './pages/DashboardPage';
 import { NewOrderPage } from './pages/NewOrderPage';
 import { UnpaidPage } from './pages/UnpaidPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportsPage } from './pages/ReportsPage';
 
-// استيراد الإعدادات والأنواع من مجلد lib
+// استيراد الإعدادات من مجلد lib
 import { Page } from './lib/types';
 import { supabase } from './lib/supabase';
 import { getPendingCount, setupOnlineListener } from './lib/offlineSync';
@@ -27,13 +27,11 @@ export default function App() {
   const [reportsLocked, setReportsLocked] = useState(true);
   const [requestedPage, setRequestedPage] = useState<Page | null>(null);
 
-  // فحص حالة القفل عند بداية التشغيل
   useEffect(() => {
     setAppLocked(isAppLocked());
     setReportsLocked(isReportsLocked());
   }, []);
 
-  // دالة جلب عدد الفواتير غير المدفوعة
   const loadUnpaidCount = useCallback(async () => {
     try {
       const { count } = await supabase
@@ -50,7 +48,6 @@ export default function App() {
     loadUnpaidCount();
   }, [loadUnpaidCount, refreshKey]);
 
-  // إعداد نظام المزامنة والعمل بدون إنترنت
   useEffect(() => {
     getPendingCount().then(setPendingSync);
 
@@ -129,12 +126,13 @@ export default function App() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh', // يغطي كامل شاشة الجوال
+        height: '100dvh',
         maxWidth: 500,
         margin: '0 auto',
         position: 'relative',
-        background: '#f8f9fa',
-        overflow: 'hidden', // يمنع الرولينج المزدوج المزعج
+        background: '#1a222a', // اللون الداكن الاحترافي POS
+        overflow: 'hidden',
+        touchAction: 'manipulation'
       }}
     >
       <PinPad
@@ -147,9 +145,10 @@ export default function App() {
 
       <AppHeader pendingSync={pendingSync} syncing={syncing} />
 
-      {syncBanner && <div style={bannerStyle}>{syncBanner}</div>}
+      {syncBanner && (
+        <div style={bannerStyle}>{syncBanner}</div>
+      )}
 
-      {/* المحتوى الرئيسي القابل للتمرير داخلياً فقط */}
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', position: 'relative' }}>
         {renderPage()}
       </main>
@@ -157,7 +156,7 @@ export default function App() {
       <BottomNav current={page} onChange={handlePageChange} unpaidCount={unpaidCount} />
 
       <style>{`
-        body { overscroll-behavior-y: none; margin: 0; padding: 0; background: #f8f9fa; }
+        body { overscroll-behavior-y: none; margin: 0; padding: 0; background: #1a222a; font-family: 'Tajawal', sans-serif; }
         main::-webkit-scrollbar { display: none; }
         * { -webkit-tap-highlight-color: transparent; outline: none; }
       `}</style>
@@ -166,31 +165,49 @@ export default function App() {
 }
 
 function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boolean }) {
-  const today = new Date().toLocaleDateString('ar-BH', { weekday: 'short', month: 'short', day: 'numeric' });
+  const today = new Date().toLocaleDateString('ar-BH', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #1a4d6e 0%, #0a2438 100%)',
+      background: '#1a222a',
       padding: '12px 20px',
       paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
       flexShrink: 0,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
       zIndex: 100
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontFamily: 'Tajawal', fontWeight: 800, fontSize: 18, color: 'white', margin: 0 }}>مغسلة الخدمة المميزة</h1>
-          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.5)', margin: 0 }}>PREMIUM SERVICE LAUNDRY</p>
+          <h1 style={{ fontFamily: 'Tajawal', fontWeight: 700, fontSize: 18, color: 'white', margin: 0 }}>
+            الخدمة المميزة
+          </h1>
+          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.5)', margin: 0, textTransform: 'uppercase' }}>
+            Laundry System Pro
+          </p>
         </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {(pendingSync > 0 || syncing) && (
-            <div style={{ background: syncing ? '#f59e0b' : '#ef4444', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{
+              background: syncing ? '#f59e0b' : '#ef4444',
+              borderRadius: 8, padding: '4px 8px',
+              display: 'flex', alignItems: 'center', gap: 6,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>
               <span className={syncing ? "animate-pulse" : ""} style={{ width: 6, height: 6, borderRadius: '50%', background: 'white' }} />
-              <span style={{ fontFamily: 'Tajawal', fontSize: 10, color: 'white', fontWeight: 700 }}>{syncing ? 'مزامنة...' : `${pendingSync} معلق`}</span>
+              <span style={{ fontFamily: 'Tajawal', fontSize: 10, color: 'white', fontWeight: 700 }}>
+                {syncing ? 'مزامنة...' : `${pendingSync} معلق`}
+              </span>
             </div>
           )}
-          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px' }}>
-            <span style={{ fontFamily: 'Tajawal', fontSize: 12, color: '#fff', fontWeight: 600 }}>{today}</span>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <span style={{ fontFamily: 'Tajawal', fontSize: 12, color: '#fff', margin: 0, fontWeight: 600 }}>
+              {today}
+            </span>
           </div>
         </div>
       </div>
