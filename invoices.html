@@ -96,6 +96,7 @@
                 <optgroup label="رجالي | Gents">
                     <option value="ثوب | Thobe" data-wash="0.500" data-iron="0.150">ثوب | Thobe</option>
                     <option value="ثوب بالبخار | Thobe Steam" data-wash="0.600" data-iron="0.200">ثوب بالبخار | Thobe Steam</option>
+                    <option value="قميص | Shirt" data-wash="0.600" data-iron="0.300">قميص | Shirt</option>
                     <option value="بنطلون طويل | Trouser" data-wash="0.600" data-iron="0.300">بنطلون طويل | Trouser</option>
                     <option value="بنطلون قصير | Short" data-wash="0.400" data-iron="0.200">بنطلون قصير | Short</option>
                     <option value="بدلة عسكرية | Uniform" data-wash="1.000" data-iron="0.400">بدلة عسكرية | Uniform</option>
@@ -296,7 +297,6 @@
         btn.disabled = true;
         btn.innerText = "جاري الحفظ...";
         
-        // تعديل الـ Payload ليرسل السعر بجانب كل خدمة إلى n8n
         const payload = { 
             action: 'save', 
             "رقم الفاتورة": document.getElementById('invNum').innerText, 
