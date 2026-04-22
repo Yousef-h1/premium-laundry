@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// استيراد المكونات - المسارات مصححة لتناسب هيكل GitHub
+// استيراد المكونات - تم تصحيح المسارات لتناسب الهيكل الفعلي
 import { BottomNav } from './components/BottomNav';
 import { PinPad } from './components/PinPad';
 
-// استيراد الصفحات - التأكد من مطابقة أسماء الملفات PascalCase
+// استيراد الصفحات - ملاحظة: تم تعديل المسميات لتطابق ملفات GitHub (PascalCase)
+// تأكد أن أسماء الملفات في GitHub هي DashboardPage.tsx وليس dashboardPage.tsx
 import { DashboardPage } from './pages/DashboardPage';
 import { NewOrderPage } from './pages/NewOrderPage';
 import { UnpaidPage } from './pages/UnpaidPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportsPage } from './pages/ReportsPage';
 
-// استيراد المكتبات والأنواع
+// استيراد المكتبات والتعريفات
 import { Page } from './lib/types';
 import { supabase } from './lib/supabase';
 import { getPendingCount, setupOnlineListener } from './lib/offlineSync';
@@ -127,11 +128,11 @@ export default function App() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh',
+        height: '100dvh', // يضمن ملء الشاشة في الجوال (iOS & Android)
         maxWidth: 500,
         margin: '0 auto',
         position: 'relative',
-        background: '#1a222a', // التصميم الداكن POS
+        background: '#1a222a', // اللون الداكن المطلوب POS
         overflow: 'hidden',
         touchAction: 'manipulation'
       }}
@@ -150,11 +151,12 @@ export default function App() {
         <div style={bannerStyle}>{syncBanner}</div>
       )}
 
-      {/* منطقة المحتوى: تمرير داخلي حصري يمنع مشاكل الرولينج */}
+      {/* منطقة المحتوى: تمرير داخلي فقط لمنع "الرولينج" المزعج */}
       <main style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', position: 'relative' }}>
         {renderPage()}
       </main>
 
+      {/* شريط التنقل السفلي */}
       <BottomNav current={page} onChange={handlePageChange} unpaidCount={unpaidCount} />
 
       <style>{`
@@ -175,7 +177,7 @@ function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boo
     <div style={{
       background: '#1a222a',
       padding: '12px 20px',
-      paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
+      paddingTop: 'calc(env(safe-area-inset-top) + 12px)', // دعم نوتش الآيفون
       flexShrink: 0,
       borderBottom: '1px solid rgba(255,255,255,0.05)',
       zIndex: 100
@@ -185,8 +187,8 @@ function AppHeader({ pendingSync, syncing }: { pendingSync: number; syncing: boo
           <h1 style={{ fontFamily: 'Tajawal', fontWeight: 700, fontSize: 18, color: 'white', margin: 0 }}>
             الخدمة المميزة
           </h1>
-          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-            PREMIUM LAUNDRY POS
+          <p style={{ fontFamily: 'Inter', fontSize: 9, color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+            PREMIUM LAUNDRY SYSTEM
           </p>
         </div>
 
