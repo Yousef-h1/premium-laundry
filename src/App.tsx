@@ -1,19 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// استيراد المكونات - التأكد من المسارات الصحيحة
+// استيراد المكونات - المسار المعدل حسب الهيكل الحالي
 import { BottomNav } from './components/BottomNav';
 import { PinPad } from './components/PinPad';
 
-// استيراد الصفحات - تأكد من مطابقة حالة الأحرف (Case Sensitivity)
+// استيراد الصفحات - تأكد من وجود المجلد pages والملفات تبدأ بـ Export Function
 import { DashboardPage } from './pages/DashboardPage';
 import { NewOrderPage } from './pages/NewOrderPage';
 import { UnpaidPage } from './pages/UnpaidPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportsPage } from './pages/ReportsPage';
 
-// المكتبات والوظائف
+// المكتبات والوظائف - المسار المعدل حسب مجلد lib
 import { Page } from './lib/types';
-import { supabase } from './lib/supabase'; // المصدر الموحد للاتصال
+import { supabase } from './lib/supabase';
 import { getPendingCount, setupOnlineListener } from './lib/offlineSync';
 import { isAppLocked, unlockApp, isReportsLocked, unlockReports } from './lib/security';
 
@@ -34,10 +34,9 @@ export default function App() {
     setReportsLocked(isReportsLocked());
   }, []);
 
-  // 2. تحديث عدد الطلبات غير المدفوعة مع معالجة الأخطاء (صمام أمان)
+  // 2. تحديث عدد الطلبات غير المدفوعة
   const loadUnpaidCount = useCallback(async () => {
     try {
-      // التأكد من أن الكائن supabase معرف قبل الاستخدام
       if (!supabase) return;
 
       const { count, error } = await supabase
@@ -83,7 +82,7 @@ export default function App() {
     };
   }, []);
 
-  // 4. معالج تغيير الصفحات مع التحقق من القفل
+  // 4. معالج تغيير الصفحات
   const handlePageChange = (newPage: Page) => {
     if (newPage === 'reports' && isReportsLocked()) {
       setRequestedPage('reports');
@@ -93,11 +92,11 @@ export default function App() {
     }
   };
 
-  // 5. وظيفة عرض الصفحات
+  // 5. منطق عرض الصفحات
   const renderPage = () => {
     switch (page) {
       case 'dashboard': return <DashboardPage key={refreshKey} />;
-      case 'new-order': return <NewOrderPage onOrderSaved={() => setRefreshKey(k => k + 1)} />;
+      case 'new-order': return <NewOrderPage onOrderSaved={() => { setRefreshKey(k => k + 1); setPage('dashboard'); }} />;
       case 'unpaid': return <UnpaidPage key={refreshKey} />;
       case 'expenses': return <ExpensesPage key={refreshKey} />;
       case 'reports': return <ReportsPage key={refreshKey} />;
@@ -105,7 +104,7 @@ export default function App() {
     }
   };
 
-  // شاشة القفل الرئيسية
+  // شاشة القفل الرئيسية (يوسف: الرمز هو 0005)
   if (appLocked) {
     return (
       <PinPad
@@ -120,7 +119,7 @@ export default function App() {
 
   return (
     <div style={appContainerStyle}>
-      {/* قفل قسم التقارير والمحاسبة */}
+      {/* قفل قسم المحاسبة (الرمز هو 1988) */}
       <PinPad
         title="Reports Lock"
         titleAr="قفل المحاسبة"
@@ -136,9 +135,9 @@ export default function App() {
 
       <header style={headerStyle}>
         <div style={headerContentStyle}>
-          <div>
+          <div style={{ textAlign: 'right' }}>
             <h1 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 800 }}>الخدمة المميزة</h1>
-            <p style={{ fontSize: '0.6rem', margin: 0, opacity: 0.5 }}>PREMIUM LAUNDRY POS</p>
+            <p style={{ fontSize: '0.6rem', margin: 0, opacity: 0.5, letterSpacing: '1px' }}>PREMIUM LAUNDRY POS</p>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {pendingSync > 0 && (
@@ -165,14 +164,14 @@ export default function App() {
 
       <style>{`
         body { background: #1a222a; margin: 0; font-family: 'Tajawal', sans-serif; overscroll-behavior-y: none; }
-        * { -webkit-tap-highlight-color: transparent; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; }
         main::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
 }
 
-// --- تنسيقات التصميم الداكن POS (CSS-in-JS) ---
+// --- تنسيقات التصميم الداكن POS (يوسف: هذا التنسيق مناسب جداً للهواتف) ---
 const appContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -182,7 +181,8 @@ const appContainerStyle: React.CSSProperties = {
   background: '#1a222a',
   color: 'white',
   overflow: 'hidden',
-  position: 'relative'
+  position: 'relative',
+  direction: 'rtl'
 };
 
 const headerStyle: React.CSSProperties = {
