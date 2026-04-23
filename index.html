@@ -3,39 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a222a">
+    
     <title>مغسلة الخدمة المميزة</title>
-    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-    <main id="app-viewport">
-        <header class="app-header">
-            <h1>مغسلة الخدمة المميزة</h1>
-        </header>
+    <div id="root"></div>
 
-        <section id="main-content">
-            </section>
+    <script type="module" src="/src/main.tsx"></script>
 
-        <nav class="bottom-nav">
-            <a href="#" class="nav-item" onclick="window.history.back()">
-                <i class="fas fa-chevron-right"></i>
-                <span>رجوع</span>
-            </a>
-            <a href="index.html" class="nav-item active">
-                <i class="fas fa-home"></i>
-                <span>الرئيسية</span>
-            </a>
-            <a href="invoices.html" class="nav-item">
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>الفواتير</span>
-            </a>
-        </nav>
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="script.js"></script>
-</body>
+    </body>
 </html>
