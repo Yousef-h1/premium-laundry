@@ -8,14 +8,14 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['vite.svg', 'favicon.ico', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'vite.svg'],
       manifest: {
         name: 'مغسلة الخدمة المميزة | Premium Service Laundry',
         short_name: 'المميزة',
         description: 'نظام إدارة مغسلة الخدمة المميزة المؤتمت',
-        theme_color: '#1a4d6e',
-        background_color: '#f8f9fa',
-        display: 'standalone', // يضمن فتح التطبيق بملء الشاشة بدون شريط المتصفح
+        theme_color: '#1a222a', // تم التعديل للون الداكن المعتمد في التطبيق
+        background_color: '#1a222a',
+        display: 'standalone',
         scope: '/',
         start_url: '/',
         orientation: 'portrait',
@@ -24,7 +24,7 @@ export default defineConfig({
             src: 'vite.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
-            purpose: 'any maskable' // مهم جداً لدعم أيقونات الأندرويد والآيفون بشكل صحيح
+            purpose: 'any maskable'
           },
           {
             src: 'vite.svg',
@@ -36,7 +36,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        // ضمان عمل المزامنة في الخلفية والعمل بدون إنترنت
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -48,7 +47,6 @@ export default defineConfig({
             },
           },
           {
-            // تحسين الاتصال بـ Supabase: نستخدم NetworkFirst لضمان أحدث البيانات مع دعم الأوفلاين
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -62,17 +60,34 @@ export default defineConfig({
       },
     }),
   ],
-  // --- الجزء الجديد والأهم لإصلاح خطأ Coolify ---
+  // إعدادات البناء لضمان خروج الملفات لمجلد dist بشكل نظيف
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
+  // إعدادات السيرفر للحاويات (Coolify)
   server: {
-    host: '0.0.0.0', // يخبر Vite أن يستقبل الاتصالات من خارج الحاوية
-    port: 5173,      // تأكد من ضبط هذا المنفذ في Coolify (Internal Port)
+    host: '0.0.0.0', 
+    port: 5173,      
     strictPort: true,
+    watch: {
+      usePolling: true, // مهم لمزامنة الملفات داخل Docker
+    },
   },
   preview: {
     host: '0.0.0.0',
     port: 5173,
   },
-  // -------------------------------------------
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
