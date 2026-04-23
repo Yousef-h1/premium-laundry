@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
-// استيراد المكونات - مسارات مصححة بدقة
+
+// استيراد المكونات - التأكد من المسارات الصحيحة
 import { BottomNav } from './components/BottomNav';
 import { PinPad } from './components/PinPad';
 
-// استيراد الصفحات - تأكد من مطابقة حالة الأحرف في GitHub حرفياً
+// استيراد الصفحات - تأكد من مطابقة حالة الأحرف (Case Sensitivity)
 import { DashboardPage } from './pages/DashboardPage';
 import { NewOrderPage } from './pages/NewOrderPage';
 import { UnpaidPage } from './pages/UnpaidPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportsPage } from './pages/ReportsPage';
 
-// المكتبات الأساسية
+// المكتبات والوظائف
 import { Page } from './lib/types';
-import { supabase } from './lib/supabase';
+import { supabase } from './lib/supabase'; // المصدر الموحد للاتصال
 import { getPendingCount, setupOnlineListener } from './lib/offlineSync';
 import { isAppLocked, unlockApp, isReportsLocked, unlockReports } from './lib/security';
 
@@ -27,24 +28,31 @@ export default function App() {
   const [reportsLocked, setReportsLocked] = useState(true);
   const [requestedPage, setRequestedPage] = useState<Page | null>(null);
 
-  // إدارة قفل التطبيق عند الفتح
+  // 1. إدارة قفل التطبيق عند التشغيل
   useEffect(() => {
     setAppLocked(isAppLocked());
     setReportsLocked(isReportsLocked());
   }, []);
 
-  // تحديث عدد الطلبات غير المدفوعة مع معالجة الأخطاء
+  // 2. تحديث عدد الطلبات غير المدفوعة مع معالجة الأخطاء (صمام أمان)
   const loadUnpaidCount = useCallback(async () => {
     try {
+      // التأكد من أن الكائن supabase معرف قبل الاستخدام
+      if (!supabase) return;
+
       const { count, error } = await supabase
         .from('invoices')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'unpaid');
       
-      if (error) throw error;
+      if (error) {
+        console.warn("Supabase Fetch Warning:", error.message);
+        return;
+      }
+
       setUnpaidCount(count || 0);
     } catch (err) {
-      console.error("Supabase Sync Error:", err);
+      console.error("Critical Connection Error:", err);
     }
   }, []);
 
@@ -52,7 +60,7 @@ export default function App() {
     loadUnpaidCount();
   }, [loadUnpaidCount, refreshKey]);
 
-  // مستمع المزامنة (Offline Sync)
+  // 3. إدارة المزامنة (Offline Sync)
   useEffect(() => {
     getPendingCount().then(setPendingSync);
 
@@ -63,7 +71,6 @@ export default function App() {
         setSyncBanner(`تمت مزامنة ${result.synced} فاتورة بنجاح`);
         setTimeout(() => setSyncBanner(null), 4000);
         setRefreshKey(k => k + 1);
-        loadUnpaidCount();
       }
     });
 
@@ -74,8 +81,9 @@ export default function App() {
       cleanup();
       window.removeEventListener('online', handleOnline);
     };
-  }, [loadUnpaidCount]);
+  }, []);
 
+  // 4. معالج تغيير الصفحات مع التحقق من القفل
   const handlePageChange = (newPage: Page) => {
     if (newPage === 'reports' && isReportsLocked()) {
       setRequestedPage('reports');
@@ -85,6 +93,7 @@ export default function App() {
     }
   };
 
+  // 5. وظيفة عرض الصفحات
   const renderPage = () => {
     switch (page) {
       case 'dashboard': return <DashboardPage key={refreshKey} />;
@@ -96,6 +105,7 @@ export default function App() {
     }
   };
 
+  // شاشة القفل الرئيسية
   if (appLocked) {
     return (
       <PinPad
@@ -110,10 +120,16 @@ export default function App() {
 
   return (
     <div style={appContainerStyle}>
+      {/* قفل قسم التقارير والمحاسبة */}
       <PinPad
         title="Reports Lock"
         titleAr="قفل المحاسبة"
-        onSuccess={() => { unlockReports(); setReportsLocked(false); setPage('reports'); setRequestedPage(null); }}
+        onSuccess={() => { 
+          unlockReports(); 
+          setReportsLocked(false); 
+          setPage('reports'); 
+          setRequestedPage(null); 
+        }}
         correctPin="1988"
         isOpen={requestedPage === 'reports' && reportsLocked}
       />
@@ -141,7 +157,11 @@ export default function App() {
         {renderPage()}
       </main>
 
-      <BottomNav current={page} onChange={handlePageChange} unpaidCount={unpaidCount} />
+      <BottomNav 
+        current={page} 
+        onChange={handlePageChange} 
+        unpaidCount={unpaidCount} 
+      />
 
       <style>{`
         body { background: #1a222a; margin: 0; font-family: 'Tajawal', sans-serif; overscroll-behavior-y: none; }
@@ -152,7 +172,7 @@ export default function App() {
   );
 }
 
-// --- تنسيقات التصميم الداكن POS ---
+// --- تنسيقات التصميم الداكن POS (CSS-in-JS) ---
 const appContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
