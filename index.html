@@ -22,7 +22,7 @@
     <script type="module" src="/src/main.tsx"></script>
 
     <script>
-        // تنظيف أي Service Worker قديم قد يعطل الموقع
+        // كود إجباري لمسح النسخة القديمة (Cache) من متصفح العميل
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) {
