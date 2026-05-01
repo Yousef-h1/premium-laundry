@@ -195,10 +195,8 @@
             });
             const data = await response.json();
             let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : data.lastID;
-            
-            // التعديل الصارم: منع العودة لرقم 20071 وعرض ما يأتي من السكربت فقط
-            invDisplay.innerText = (lastID) ? lastID : "---";
-        } catch (err) { invDisplay.innerText = "---"; }
+            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) : "20071";
+        } catch (err) { invDisplay.innerText = "20071"; }
     }
 
     async function handleAppLogin() {
@@ -300,7 +298,7 @@
         
         const payload = { 
             action: 'save', 
-            "رقم الفاتورة": "", // التعديل الصارم: إرسال فارغ ليتولى سكربت onEdit التوليد التلقائي
+            "رقم الفاتورة": document.getElementById('invNum').innerText, 
             "الاسم": name, 
             "الهاتف": phone, 
             "الاجمالي": document.getElementById('finalTotal').innerText, 
@@ -310,10 +308,7 @@
         };
         try {
             const response = await fetch(WEBHOOK_URL_MAIN, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            if (response.ok) {
-                alert("تم الحفظ بنجاح سيتم توليد الرقم تلقائياً في الجدول");
-                location.reload();
-            }
+            if (response.ok) location.reload();
         } catch (e) { btn.disabled = false; btn.innerText = "اعتماد وإرسال واتساب"; }
     }
     document.getElementById('dateNow').innerText = document.getElementById('dateNowHeader').innerText = new Date().toLocaleDateString('en-GB');
