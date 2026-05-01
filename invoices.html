@@ -194,10 +194,10 @@
                 body: JSON.stringify({ action: "get_last_id" })
             });
             const data = await response.json();
-            // التصحيح: استهداف المفتاح lastID ليتطابق مع مخرج n8n
-            let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : (data.lastID || data.invoice_no);
-            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) : "20071";
-        } catch (err) { invDisplay.innerText = "20071"; }
+            // التعديل الصارم: استلام المفتاح lastID لضمان جلب أكبر رقم حقيقي + 1 من السيرفر
+            let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : data.lastID;
+            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) : "---";
+        } catch (err) { invDisplay.innerText = "Error"; }
     }
 
     async function handleAppLogin() {
@@ -226,9 +226,9 @@
                 if (res["الاجمالي"]) document.getElementById('finalTotal').innerText = cleanData(res["الاجمالي"]);
 
                 if (res["الخدمات"]) {
-                    const servicesList = cleanData(res["الخدمات"]).split(',');
+                    const servicesList = cleanData(res["الخدمات"]).split('\n');
                     const billBody = document.getElementById('billBody');
-                    billBody.innerHTML = `<p style="font-size:0.8rem; color:var(--primary)">آخر طلب: ${res["رقم الفاتورة"] || res["رقم الفاتوره"]}</p>`;
+                    billBody.innerHTML = `<p style="font-size:0.8rem; color:var(--primary)">فاتورة سابقة: ${res["رقم الفاتورة"] || res["رقم الفاتوره"]}</p>`;
                     servicesList.forEach(srv => {
                         if(srv.trim()) billBody.innerHTML += `<div class="bill-item-row"><div class="item-main-info"><span>${srv}</span></div></div>`;
                     });
@@ -303,7 +303,7 @@
             "الاسم": name, 
             "الهاتف": phone, 
             "الاجمالي": document.getElementById('finalTotal').innerText, 
-            "الخدمات": items.map(i => `${i.name} (x${i.qty}) [${i.mode} - ${i.urgency}]`).join(', '), 
+            "الخدمات": items.map(i => `${i.name} (x${i.qty}) - السعر: ${i.price.toFixed(3)} BHD [${i.mode} - ${i.urgency}]`).join(', '), 
             "التاريخ": new Date().toLocaleDateString('en-GB'), 
             "الدفع الشهري": document.getElementById('monthlyPayCheck').checked ? "نعم" : "لا" 
         };
