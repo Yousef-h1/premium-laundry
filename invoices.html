@@ -194,10 +194,10 @@
                 body: JSON.stringify({ action: "get_last_id" })
             });
             const data = await response.json();
-            // التعديل الصارم: استلام المفتاح lastID لضمان جلب أكبر رقم حقيقي + 1 من السيرفر
+            // تعديل: جلب الرقم لعرضه فقط في الواجهة؛ التوليد الحقيقي يتم في السكربت عند الحفظ
             let lastID = (Array.isArray(data) && data.length > 0) ? (data[0].json ? data[0].json.lastID : data[0].lastID) : data.lastID;
-            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) : "---";
-        } catch (err) { invDisplay.innerText = "Error"; }
+            invDisplay.innerText = (lastID && !isNaN(parseInt(lastID))) ? parseInt(lastID) : "20071";
+        } catch (err) { invDisplay.innerText = "---"; }
     }
 
     async function handleAppLogin() {
@@ -297,19 +297,23 @@
         btn.disabled = true;
         btn.innerText = "جاري الحفظ...";
         
+        // تعديل صارم: إرسال حقل "رقم الفاتورة" فارغاً للسماح للسكربت (Apps Script) بتوليده تلقائياً عند الإدخال في الشيت
         const payload = { 
             action: 'save', 
-            "رقم الفاتورة": document.getElementById('invNum').innerText, 
+            "رقم الفاتورة": "", 
             "الاسم": name, 
             "الهاتف": phone, 
             "الاجمالي": document.getElementById('finalTotal').innerText, 
-            "الخدمات": items.map(i => `${i.name} (x${i.qty}) - السعر: ${i.price.toFixed(3)} BHD [${i.mode} - ${i.urgency}]`).join(', '), 
+            "الخدمات": items.map(i => `${i.name} (x${i.qty}) [${i.mode} - ${i.urgency}]`).join(', '), 
             "التاريخ": new Date().toLocaleDateString('en-GB'), 
             "الدفع الشهري": document.getElementById('monthlyPayCheck').checked ? "نعم" : "لا" 
         };
         try {
             const response = await fetch(WEBHOOK_URL_MAIN, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            if (response.ok) location.reload();
+            if (response.ok) {
+                alert("تم استلام الطلب بنجاح ✅");
+                location.reload();
+            }
         } catch (e) { btn.disabled = false; btn.innerText = "اعتماد وإرسال واتساب"; }
     }
     document.getElementById('dateNow').innerText = document.getElementById('dateNowHeader').innerText = new Date().toLocaleDateString('en-GB');
