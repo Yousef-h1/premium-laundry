@@ -95,17 +95,14 @@
             } else { alert('كلمة المرور خاطئة!'); }
         }
 
-        // تحسين دالة فحص التاريخ لتتوافق مع تنسيق البحرين DD/MM/YYYY أو YYYY/MM/DD
         function isMatchToday(dateString) {
             if (!dateString) return false;
             const now = new Date();
             const y = now.getFullYear();
             const m = (now.getMonth() + 1).toString().padStart(2, '0');
             const d = now.getDate().toString().padStart(2, '0');
-            
-            const today1 = `${y}/${m}/${d}`; // YYYY/MM/DD
-            const today2 = `${d}/${m}/${y}`; // DD/MM/YYYY
-            
+            const today1 = `${y}/${m}/${d}`; 
+            const today2 = `${d}/${m}/${y}`; 
             const cleanDate = dateString.split(' ')[0].replace(/["']/g, '').trim();
             return cleanDate === today1 || cleanDate === today2;
         }
@@ -137,25 +134,17 @@
             mobileList.innerHTML = '';
 
             [...rows].reverse().forEach((row) => {
-                const dateA = row[0] || ""; // تاريخ الإنشاء
+                const dateA = row[0] || ""; 
                 const invId = row[1];       
                 const name = row[2] || "عميل غير معروف"; 
                 const phone = row[3] || ""; 
                 const totalValF = parseFloat(row[5]?.toString().replace(/[^\d.]/g, '')) || 0; 
                 const statusG = (row[6] || "").trim(); 
-                const paymentDateJ = row[9] || ""; // العمود J: تاريخ الدفع
+                const paymentDateJ = row[9] || ""; 
 
                 if (phone && phone.trim().length > 3) phoneNumbers.add(phone.trim());
-                
-                // طلبات اليوم تعتمد على تاريخ الإنشاء (العمود A)
-                if (isMatchToday(dateA)) {
-                    todayOrdersCount++;
-                }
-
-                // مبيعات اليوم تعتمد على تاريخ الدفع (العمود J) وحالة الدفع
-                if (statusG === "تم الدفع" && isMatchToday(paymentDateJ)) {
-                    todayRevenueSum += totalValF;
-                }
+                if (isMatchToday(dateA)) todayOrdersCount++;
+                if (statusG === "تم الدفع" && isMatchToday(paymentDateJ)) todayRevenueSum += totalValF;
 
                 if (statusG !== "تم الدفع" && statusG !== "ملغي") {
                     pendingCount++;
@@ -173,7 +162,7 @@
                             <div class="flex gap-2 pt-2 border-t border-slate-50">
                                 <button onclick="resendInvoice('${invId}', this)" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold border border-slate-200 text-xs">إعادة إرسال ✉️</button>
                                 <button onclick="openModal('${invId}', '${totalValF}')" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black shadow-md">دفع</button>
-                                <button onclick="cancelInvoice('${invId}')" class="bg-red-50 text-red-600 px-4 py-3 rounded-xl border border-red-100 font-bold">إلغاء</button>
+                                <button onclick="cancelInvoice('${invId}', this)" class="bg-red-50 text-red-600 px-4 py-3 rounded-xl border border-red-100 font-bold">إلغاء</button>
                             </div>
                         </div>`);
                 }
@@ -192,10 +181,7 @@
                 const res = await fetch('https://n8n.awj-bh.cloud/webhook/725f1ccb-6fa7-421d-9b68-8b60322702c3', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        invoiceId: invId.toString(), 
-                        action: "resend_invoice" 
-                    })
+                    body: JSON.stringify({ action: "resend_invoice", "رقم الفاتورة": invId.toString() })
                 });
                 if(res.ok) alert('✅ تم طلب إعادة الإرسال');
                 else alert('❌ خطأ في الإرسال');
@@ -232,14 +218,19 @@
             finally { btn.disabled = false; btn.innerText = "تأكيد الإتمام ✅"; }
         }
 
-        async function cancelInvoice(invId) {
-            if(!confirm('إلغاء؟')) return;
-            await fetch(n8nWebhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ invoiceId: invId, status: "ملغي" })
-            });
-            setTimeout(fetchData, 1500);
+        async function cancelInvoice(invId, btn) {
+            if(!confirm('هل أنت متأكد من إلغاء الفاتورة؟')) return;
+            const original = btn.innerText;
+            btn.disabled = true; btn.innerText = "...";
+            try {
+                await fetch(n8nWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoiceId: invId, status: "ملغي" })
+                });
+                setTimeout(fetchData, 1500);
+            } catch (err) { alert('خطأ'); }
+            finally { btn.disabled = false; btn.innerText = original; }
         }
 
         document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('ar-BH');
