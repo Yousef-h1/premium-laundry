@@ -85,6 +85,7 @@
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVDfAAvXCHzUgySBRT3p61ZnQ49HdR0UUwLDpTTar9_hWyYjQKtKv6lMvbFYteHgorJ07XUUw86ut2/pub?gid=0&single=true&output=csv';
         const n8nWebhookUrl = 'https://n8n.awj-bh.cloud/webhook/update-status';
+        const resendWebhookUrl = 'https://n8n.awj-bh.cloud/webhook/725f1ccb-6fa7-421d-9b68-8b60322702c3';
         let currentInv = null;
 
         function checkPass() {
@@ -178,10 +179,15 @@
             const original = btn.innerText;
             btn.disabled = true; btn.innerText = "جاري...";
             try {
-                const res = await fetch('https://n8n.awj-bh.cloud/webhook/725f1ccb-6fa7-421d-9b68-8b60322702c3', {
+                // تم توحيد مسمى الحقل ليتوافق مع نظام البحث في n8n
+                const res = await fetch(resendWebhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: "resend_invoice", "رقم الفاتورة": invId.toString() })
+                    body: JSON.stringify({ 
+                        action: "resend_invoice", 
+                        invoiceId: invId.toString(),
+                        "رقم الفاتورة": invId.toString() // إبقاء المسمى القديم أيضاً لضمان التوافق التام
+                    })
                 });
                 if(res.ok) alert('✅ تم طلب إعادة الإرسال');
                 else alert('❌ خطأ في الإرسال');
@@ -211,7 +217,15 @@
                 await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invoiceId: currentInv, status: statusType, cash, benefit, paymentDate: pDate, notify: false })
+                    body: JSON.stringify({ 
+                        invoiceId: currentInv, 
+                        "رقم الفاتورة": currentInv, // ضمان وصول الرقم بالمسمى العربي أيضاً
+                        status: statusType, 
+                        cash, 
+                        benefit, 
+                        paymentDate: pDate, 
+                        notify: false 
+                    })
                 });
                 closeModal(); setTimeout(fetchData, 2000);
             } catch (err) { alert('خطأ'); }
@@ -226,7 +240,11 @@
                 await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invoiceId: invId, status: "ملغي" })
+                    body: JSON.stringify({ 
+                        invoiceId: invId, 
+                        "رقم الفاتورة": invId,
+                        status: "ملغي" 
+                    })
                 });
                 setTimeout(fetchData, 1500);
             } catch (err) { alert('خطأ'); }
